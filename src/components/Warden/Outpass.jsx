@@ -1,14 +1,12 @@
-// src/components/Warden/WardenOutpass.jsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { Container, Table, Button, Spinner, Alert, Modal, Image } from 'react-bootstrap';
+import { Container, Table, Button, Spinner, Alert } from 'react-bootstrap';
 
 const WardenOutpass = () => {
   const [outpasses, setOutpasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showQR, setShowQR] = useState({ show: false, qr: '' });
 
-const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
+  const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
 
   const fetchOutpasses = useCallback(async () => {
     try {
@@ -57,7 +55,7 @@ const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
             <th>Departure</th>
             <th>Return</th>
             <th>Status</th>
-            <th>QR / Actions</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -79,10 +77,8 @@ const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
                       <Button size="sm" variant="success" onClick={() => handleStatus(o._id, 'Approved')} className="me-2">Approve</Button>
                       <Button size="sm" variant="danger" onClick={() => handleStatus(o._id, 'Rejected')}>Reject</Button>
                     </>
-                  ) : o.status === 'Approved' ? (
-                    <Button size="sm" variant="info" onClick={() => setShowQR({ show: true, qr: o.qrCode })}>View QR</Button>
                   ) : (
-                    <span>Rejected</span>
+                    <span>{o.status}</span>
                   )}
                 </td>
               </tr>
@@ -90,14 +86,6 @@ const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
           )}
         </tbody>
       </Table>
-
-      {/* QR Modal */}
-      <Modal show={showQR.show} onHide={() => setShowQR({ show: false, qr: '' })} centered>
-        <Modal.Header closeButton><Modal.Title>Approved Outpass QR</Modal.Title></Modal.Header>
-        <Modal.Body className="text-center">
-          {showQR.qr ? <Image src={showQR.qr} fluid /> : <p>No QR available</p>}
-        </Modal.Body>
-      </Modal>
     </Container>
   );
 };
