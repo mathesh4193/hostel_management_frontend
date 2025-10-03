@@ -8,7 +8,7 @@ const WardenOutpass = () => {
   const [error, setError] = useState('');
   const [showQR, setShowQR] = useState({ show: false, qr: '' });
 
-  const API_BASE = process.env.REACT_APP_API_URL || `${window.location.origin}/api`;
+const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
 
   const fetchOutpasses = useCallback(async () => {
     try {
