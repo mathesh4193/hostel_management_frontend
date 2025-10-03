@@ -1,69 +1,162 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Table, Button, Modal, Image } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Form, Button, Card, Alert, Row, Col, Table, Spinner, Modal, Image } from 'react-bootstrap';
 
-const StudentOutpass = () => {
+const StudentOutpassDashboard = () => {
   const student = JSON.parse(localStorage.getItem('student') || '{}');
+
+  // --- Form State ---
+  const [formData, setFormData] = useState({
+    rollNo: student.rollNo || '',
+    studentName: student.name || '',
+    roomNo: student.roomNo || '',
+    destination: '',
+    purpose: '',
+    departureDate: '',
+    departureTime: '',
+    returnDate: '',
+    returnTime: '',
+    emergencyContact: ''
+  });
+  const [validated, setValidated] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState({ show: false, message: '', variant: '' });
+
+  // --- Outpass Table State ---
   const [outpasses, setOutpasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showQR, setShowQR] = useState({ show: false, qr: '' });
 
   const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
 
-  useEffect(() => {
-    const fetchOutpasses = async () => {
+  // --- Fetch student outpasses ---
+  const fetchOutpasses = useCallback(async () => {
+    try {
+      setLoading(true);
       const res = await fetch(`${API_BASE}/outpasses?rollNo=${student.rollNo}`);
+      if (!res.ok) throw new Error('Failed to fetch outpasses');
       const data = await res.json();
       setOutpasses(Array.isArray(data) ? data : []);
-    };
-    fetchOutpasses();
-  }, [student.rollNo]);
+    } catch (err) {
+      setError(err.message || 'Error fetching outpasses');
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE, student.rollNo]);
+
+  useEffect(() => { fetchOutpasses(); }, [fetchOutpasses]);
+
+  // --- Handle form input ---
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // --- Submit outpass form ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (form.checkValidity() === false) {
+      e.stopPropagation();
+      setValidated(true);
+      return;
+    }
+
+    try {
+      const payload = {
+        ...formData,
+        departureTime: `${formData.departureDate}T${formData.departureTime}`,
+        returnTime: `${formData.returnDate}T${formData.returnTime}`
+      };
+
+      const res = await fetch(`${API_BASE}/outpasses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error('Failed to submit outpass');
+
+      setSubmitStatus({ show: true, message: 'Outpass submitted successfully!', variant: 'success' });
+      setFormData({ ...formData, destination: '', purpose: '', departureDate: '', departureTime: '', returnDate: '', returnTime: '', emergencyContact: '' });
+      setValidated(false);
+      fetchOutpasses();
+
+    } catch (err) {
+      setSubmitStatus({ show: true, message: err.message, variant: 'danger' });
+    }
+  };
 
   return (
-    <Container className="py-5">
-      <h3 className="mb-4">My Outpass Requests</h3>
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Destination</th>
-            <th>Purpose</th>
-            <th>Departure</th>
-            <th>Return</th>
-            <th>Status</th>
-            <th>QR</th>
-          </tr>
-        </thead>
-        <tbody>
-          {outpasses.length === 0 ? (
-            <tr><td colSpan="6" className="text-center">No outpass requests</td></tr>
-          ) : (
-            outpasses.map(o => (
-              <tr key={o._id}>
-                <td>{o.destination}</td>
-                <td>{o.purpose}</td>
-                <td>{new Date(o.departureTime).toLocaleString()}</td>
-                <td>{new Date(o.returnTime).toLocaleString()}</td>
-                <td>{o.status}</td>
-                <td>
-                  {o.status === 'Approved' && o.qrCode ? (
-                    <Button size="sm" variant="info" onClick={() => setShowQR({ show: true, qr: o.qrCode })}>
-                      View QR
-                    </Button>
-                  ) : o.status === 'Rejected' ? (
-                    'Rejected'
-                  ) : (
-                    'Pending'
-                  )}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </Table>
+    <Container className="py-4">
 
-      {/* QR Modal */}
+      {/* --- Outpass Form --- */}
+      <Card className="shadow-sm mb-5">
+        <Card.Header className="bg-primary text-white">Outpass Request Form</Card.Header>
+        <Card.Body>
+          {submitStatus.show && <Alert variant={submitStatus.variant} dismissible onClose={() => setSubmitStatus({ show: false })}>{submitStatus.message}</Alert>}
+          <Form noValidate validated={validated} onSubmit={handleSubmit}>
+            <Row className="mb-3">
+              <Col md={6}><Form.Group><Form.Label>Roll No</Form.Label><Form.Control type="text" value={formData.rollNo} readOnly /></Form.Group></Col>
+              <Col md={6}><Form.Group><Form.Label>Name</Form.Label><Form.Control type="text" value={formData.studentName} readOnly /></Form.Group></Col>
+            </Row>
+            <Form.Group className="mb-3"><Form.Label>Destination</Form.Label><Form.Control required type="text" name="destination" value={formData.destination} onChange={handleChange} /></Form.Group>
+            <Form.Group className="mb-3"><Form.Label>Purpose</Form.Label><Form.Control required as="textarea" rows={3} name="purpose" value={formData.purpose} onChange={handleChange} /></Form.Group>
+            <Row className="mb-3">
+              <Col md={6}><Form.Group><Form.Label>Departure Date</Form.Label><Form.Control required type="date" name="departureDate" value={formData.departureDate} onChange={handleChange} /></Form.Group></Col>
+              <Col md={6}><Form.Group><Form.Label>Departure Time</Form.Label><Form.Control required type="time" name="departureTime" value={formData.departureTime} onChange={handleChange} /></Form.Group></Col>
+            </Row>
+            <Row className="mb-3">
+              <Col md={6}><Form.Group><Form.Label>Return Date</Form.Label><Form.Control required type="date" name="returnDate" value={formData.returnDate} onChange={handleChange} /></Form.Group></Col>
+              <Col md={6}><Form.Group><Form.Label>Return Time</Form.Label><Form.Control required type="time" name="returnTime" value={formData.returnTime} onChange={handleChange} /></Form.Group></Col>
+            </Row>
+            <Form.Group className="mb-3"><Form.Label>Emergency Contact</Form.Label><Form.Control required type="tel" name="emergencyContact" value={formData.emergencyContact} onChange={handleChange} /></Form.Group>
+            <div className="d-grid"><Button type="submit" variant="primary">Submit Outpass</Button></div>
+          </Form>
+        </Card.Body>
+      </Card>
+
+      {/* --- Outpass Table --- */}
+      <h3 className="mb-4">My Outpass Requests</h3>
+      {loading ? <Spinner animation="border" className="d-block mx-auto my-5" /> :
+        error ? <Alert variant="danger" className="text-center">{error}</Alert> :
+          <Table striped bordered hover responsive>
+            <thead>
+              <tr>
+                <th>Destination</th>
+                <th>Purpose</th>
+                <th>Departure</th>
+                <th>Return</th>
+                <th>Status</th>
+                <th>QR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {outpasses.length === 0 ? (
+                <tr><td colSpan="6" className="text-center">No outpass requests</td></tr>
+              ) : (
+                outpasses.map(o => (
+                  <tr key={o._id}>
+                    <td>{o.destination}</td>
+                    <td>{o.purpose}</td>
+                    <td>{new Date(o.departureTime).toLocaleString()}</td>
+                    <td>{new Date(o.returnTime).toLocaleString()}</td>
+                    <td>{o.status}</td>
+                    <td>
+                      {o.status === 'Approved' && o.qrCode ? (
+                        <Button size="sm" variant="info" onClick={() => setShowQR({ show: true, qr: o.qrCode })}>View QR</Button>
+                      ) : o.status === 'Rejected' ? (
+                        <span>Rejected</span>
+                      ) : (
+                        <span>Pending</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+      }
+
+      {/* --- QR Modal --- */}
       <Modal show={showQR.show} onHide={() => setShowQR({ show: false, qr: '' })} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Approved Outpass QR</Modal.Title>
-        </Modal.Header>
+        <Modal.Header closeButton><Modal.Title>Outpass QR</Modal.Title></Modal.Header>
         <Modal.Body className="text-center">
           {showQR.qr ? <Image src={showQR.qr} fluid /> : <p>No QR available</p>}
         </Modal.Body>
@@ -72,4 +165,4 @@ const StudentOutpass = () => {
   );
 };
 
-export default StudentOutpass;
+export default StudentOutpassDashboard;
