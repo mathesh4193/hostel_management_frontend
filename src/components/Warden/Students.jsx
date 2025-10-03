@@ -1,3 +1,4 @@
+// src/components/Students.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
@@ -16,34 +17,44 @@ const Students = () => {
     contact: '',
     parentContact: ''
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://hostel-management-backend-eo9s.onrender.com/api';
+  const API_BASE = process.env.REACT_APP_API_URL || 'https://hostel-management-backend-eo9s.onrender.com/api';
 
-  // ✅ Wrap fetchStudents in useCallback to avoid ESLint warning
+  // Fetch students from API
   const fetchStudents = useCallback(async () => {
     try {
+      setLoading(true);
+      setError('');
       const response = await axios.get(`${API_BASE}/students`);
+      console.log('API response:', response.data); // Debugging
       setStudents(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error('Error fetching students', error);
+    } catch (err) {
+      console.error('Error fetching students', err);
+      setError('Failed to fetch students');
+    } finally {
+      setLoading(false);
     }
   }, [API_BASE]);
 
   useEffect(() => {
     fetchStudents();
-  }, [fetchStudents]); // ✅ safe for ESLint
+  }, [fetchStudents]);
 
+  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewStudent({ ...newStudent, [name]: value });
   };
 
+  // Handle adding a new student
   const handleAddStudent = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(`${API_BASE}/students`, newStudent);
       alert(response.data.message || 'Student added successfully!');
-
+      // Reset form
       setNewStudent({
         name: '',
         rollNo: '',
@@ -56,13 +67,14 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://hostel-management-bac
         parentContact: ''
       });
       setShowForm(false);
-      fetchStudents();
-    } catch (error) {
-      console.error('Error adding student', error);
+      fetchStudents(); // Refresh student list
+    } catch (err) {
+      console.error('Error adding student', err);
       alert('Failed to add student');
     }
   };
 
+  // Filter students based on search term
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.rollNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,11 +85,9 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://hostel-management-bac
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#1976d2' }}>
-        Student Directory
-      </h2>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#1976d2' }}>Student Directory</h2>
 
-      {/* Search Bar */}
+      {/* Search */}
       <input
         type="text"
         placeholder="Search students"
@@ -153,43 +163,47 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://hostel-management-bac
         </form>
       )}
 
-      {/* Student Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#1976d2', color: 'white' }}>
-              <th style={tableHeaderStyle}>Name</th>
-              <th style={tableHeaderStyle}>Roll No</th>
-              <th style={tableHeaderStyle}>Reg. No</th>
-              <th style={tableHeaderStyle}>Room No</th>
-              <th style={tableHeaderStyle}>Department</th>
-              <th style={tableHeaderStyle}>Year</th>
-              <th style={tableHeaderStyle}>Address</th>
-              <th style={tableHeaderStyle}>Student Contact</th>
-              <th style={tableHeaderStyle}>Parent Contact</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStudents.map(student => (
-              <tr key={student._id} style={{ backgroundColor: '#e3f2fd' }}>
-                <td style={tableCellStyle}>{student.name}</td>
-                <td style={tableCellStyle}>{student.rollNo}</td>
-                <td style={tableCellStyle}>{student.regNo}</td>
-                <td style={tableCellStyle}>{student.roomNo}</td>
-                <td style={tableCellStyle}>{student.department}</td>
-                <td style={tableCellStyle}>{student.year}</td>
-                <td style={tableCellStyle}>{student.address}</td>
-                <td style={tableCellStyle}>
-                  <a href={`tel:${student.contact}`} style={linkStyle}>{student.contact}</a>
-                </td>
-                <td style={tableCellStyle}>
-                  <a href={`tel:${student.parentContact}`} style={linkStyle}>{student.parentContact}</a>
-                </td>
+      {/* Loading / Error / Table */}
+      {loading ? (
+        <p style={{ textAlign: 'center', color: '#1976d2' }}>Loading students...</p>
+      ) : error ? (
+        <p style={{ textAlign: 'center', color: 'red' }}>{error}</p>
+      ) : filteredStudents.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#1976d2' }}>No students found.</p>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#1976d2', color: 'white' }}>
+                <th style={tableHeaderStyle}>Name</th>
+                <th style={tableHeaderStyle}>Roll No</th>
+                <th style={tableHeaderStyle}>Reg. No</th>
+                <th style={tableHeaderStyle}>Room No</th>
+                <th style={tableHeaderStyle}>Department</th>
+                <th style={tableHeaderStyle}>Year</th>
+                <th style={tableHeaderStyle}>Address</th>
+                <th style={tableHeaderStyle}>Student Contact</th>
+                <th style={tableHeaderStyle}>Parent Contact</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredStudents.map(student => (
+                <tr key={student._id} style={{ backgroundColor: '#e3f2fd' }}>
+                  <td style={tableCellStyle}>{student.name}</td>
+                  <td style={tableCellStyle}>{student.rollNo}</td>
+                  <td style={tableCellStyle}>{student.regNo}</td>
+                  <td style={tableCellStyle}>{student.roomNo}</td>
+                  <td style={tableCellStyle}>{student.department}</td>
+                  <td style={tableCellStyle}>{student.year}</td>
+                  <td style={tableCellStyle}>{student.address}</td>
+                  <td style={tableCellStyle}><a href={`tel:${student.contact}`} style={linkStyle}>{student.contact}</a></td>
+                  <td style={tableCellStyle}><a href={`tel:${student.parentContact}`} style={linkStyle}>{student.parentContact}</a></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
