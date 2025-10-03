@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Card, Form, Row, Col, Button, Table, Badge, Spinner, Alert } from 'react-bootstrap';
 
 const StudentComplaint = () => {
@@ -20,7 +20,7 @@ const StudentComplaint = () => {
   const student = JSON.parse(localStorage.getItem('student') || '{}');
 
   // Fetch complaint history for this roll number
-  const fetchComplaints = async () => {
+  const fetchComplaints = useCallback(async () => {
     if (!student.rollNo) return;
     try {
       setLoadingComplaints(true);
@@ -28,17 +28,21 @@ const StudentComplaint = () => {
       if (!res.ok) throw new Error('Failed to fetch complaints');
       const data = await res.json();
       // Sort by latest first
-      setComplaints(data.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)));
+      setComplaints(
+        data.sort(
+          (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+        )
+      );
     } catch (err) {
       console.error(err);
     } finally {
       setLoadingComplaints(false);
     }
-  };
+  }, [API_BASE, student.rollNo]);
 
   useEffect(() => {
     fetchComplaints();
-  }, [student.rollNo]);
+  }, [fetchComplaints]);
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
