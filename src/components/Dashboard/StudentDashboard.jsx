@@ -113,7 +113,7 @@ const StudentDashboard = () => {
   const menuItems = [
     { title: 'Leave Application', path: '/student/dashboard/leave', icon: '📝' },
     { title: 'Outpass', path: '/student/dashboard/outpass', icon: '🚪' },
-    { title: 'Complaints', path: '/student/dashboard/complaints', icon: '⚠️' },
+    { title: 'Complaints', path: '/complaints', icon: '⚠️' },
     { title: 'Attendance', path: '/student/dashboard/attendance', icon: '📊' },
   ];
 
