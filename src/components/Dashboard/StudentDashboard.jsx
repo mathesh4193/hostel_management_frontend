@@ -39,10 +39,12 @@ const StudentDashboard = () => {
       try {
         setLoadingLeaves(true);
         const res = await fetch(`${API_BASE}/leaves?rollno=${student.rollNo}`);
+        if (!res.ok) throw new Error('Failed to fetch leaves');
         const data = await res.json();
         setLeaves(Array.isArray(data) ? data.slice(0, 5) : []);
       } catch (err) {
         console.error(err);
+        setError('Error fetching leaves.');
         setLeaves([]);
       } finally {
         setLoadingLeaves(false);
@@ -60,10 +62,12 @@ const StudentDashboard = () => {
       try {
         setLoadingComplaints(true);
         const res = await fetch(`${API_BASE}/complaints?rollno=${student.rollNo}`);
+        if (!res.ok) throw new Error('Failed to fetch complaints');
         const data = await res.json();
         setComplaints(Array.isArray(data) ? data.slice(0, 5) : []);
       } catch (err) {
         console.error(err);
+        setError('Error fetching complaints.');
         setComplaints([]);
       } finally {
         setLoadingComplaints(false);
@@ -92,6 +96,7 @@ const StudentDashboard = () => {
         setOutpasses(outpassList.slice(0, 5));
       } catch (err) {
         console.error(err);
+        setError('Error fetching outpasses.');
         setOutpasses([]);
       } finally {
         setLoadingOutpasses(false);

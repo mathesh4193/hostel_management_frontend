@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Table, Button, Badge, Spinner, Alert } from 'react-bootstrap';
 
 const Complaints = () => {
@@ -7,7 +7,7 @@ const Complaints = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchComplaints = async () => {
+  const fetchComplaints = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE}/complaints/all`);
@@ -20,9 +20,11 @@ const Complaints = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE]);
 
-  useEffect(() => { fetchComplaints(); }, []);
+  useEffect(() => {
+    fetchComplaints();
+  }, [fetchComplaints]);
 
   const updateStatus = async (id, status) => {
     try {
@@ -53,10 +55,24 @@ const Complaints = () => {
     <Container className="py-4">
       <h2 className="text-center mb-4">Student Complaints</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      {loading ? <div className="text-center"><Spinner animation="border" /></div> : complaints.length === 0 ? <p className="text-center">No complaints submitted yet.</p> :
+      {loading ? (
+        <div className="text-center"><Spinner animation="border" /></div>
+      ) : complaints.length === 0 ? (
+        <p className="text-center">No complaints submitted yet.</p>
+      ) : (
         <Table striped bordered hover responsive>
           <thead>
-            <tr><th>Name</th><th>Roll No</th><th>Room No</th><th>Category</th><th>Subject</th><th>Description</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+            <tr>
+              <th>Name</th>
+              <th>Roll No</th>
+              <th>Room No</th>
+              <th>Category</th>
+              <th>Subject</th>
+              <th>Description</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
           </thead>
           <tbody>
             {complaints.map(c => (
@@ -70,18 +86,21 @@ const Complaints = () => {
                 <td>{new Date(c.createdAt).toLocaleDateString()}</td>
                 <td>{getStatusBadge(c.status)}</td>
                 <td>
-                  {c.status.toLowerCase() === 'pending' && <>
-                    <Button size="sm" className="me-2" onClick={() => updateStatus(c._id, 'in-progress')}>In Progress</Button>
+                  {c.status.toLowerCase() === 'pending' && (
+                    <>
+                      <Button size="sm" className="me-2" onClick={() => updateStatus(c._id, 'in-progress')}>In Progress</Button>
+                      <Button size="sm" variant="success" onClick={() => updateStatus(c._id, 'resolved')}>Resolve</Button>
+                    </>
+                  )}
+                  {c.status.toLowerCase() === 'in-progress' && (
                     <Button size="sm" variant="success" onClick={() => updateStatus(c._id, 'resolved')}>Resolve</Button>
-                  </>}
-                  {c.status.toLowerCase() === 'in-progress' &&
-                    <Button size="sm" variant="success" onClick={() => updateStatus(c._id, 'resolved')}>Resolve</Button>}
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </Table>
-      }
+      )}
     </Container>
   );
 };
