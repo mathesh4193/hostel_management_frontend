@@ -17,7 +17,7 @@ const Students = () => {
     parentContact: ''
   });
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'https://your-render-backend.onrender.com/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://hostel-management-backend-eo9s.onrender.com/api';
 
   // ✅ Wrap fetchStudents in useCallback to avoid ESLint warning
   const fetchStudents = useCallback(async () => {
