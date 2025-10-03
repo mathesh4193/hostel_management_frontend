@@ -1,3 +1,4 @@
+// src/components/Warden/WardenDashboard.jsx
 import React, { useEffect, useState } from "react";
 import {
   Typography,
@@ -21,32 +22,41 @@ const WardenDashboard = () => {
     totalStudents: 0,
     pendingLeaves: 0,
     activeComplaints: 0,
-    roomsOccupied: 0,
+    roomsOccupied: 0
   });
 
   const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api";
 
   const fetchStats = async () => {
     try {
-      // Call all APIs in parallel
       const [studentsRes, leavesRes, complaintsRes] = await Promise.all([
-        axios.get(`${API_BASE}/students`),   // ✅ students endpoint
-        axios.get(`${API_BASE}/leave`),      // ✅ leave endpoint
-        axios.get(`${API_BASE}/complaint`),  // ✅ complaint endpoint
+        axios.get(`${API_BASE}/students`),
+        axios.get(`${API_BASE}/leaves`),
+        axios.get(`${API_BASE}/complaints`),
       ]);
 
-      // Adjust based on backend response
-      const students = studentsRes.data.students || studentsRes.data || [];
-      const leaves = leavesRes.data.leaves || leavesRes.data || [];
-      const complaints = complaintsRes.data.complaints || complaintsRes.data || [];
+      // Students API returns { students: [...] }
+      const students = studentsRes.data.students || [];
+
+      // Leaves API returns [] (array directly)
+      const leaves = Array.isArray(leavesRes.data)
+        ? leavesRes.data
+        : leavesRes.data.leaves || [];
+
+      // Complaints API returns [] (array directly)
+      const complaints = Array.isArray(complaintsRes.data)
+        ? complaintsRes.data
+        : complaintsRes.data.complaints || [];
 
       const totalStudents = students.length;
-      const pendingLeaves = leaves.filter((l) => l.status === "Pending").length;
-      const activeComplaints = complaints.filter(
-        (c) => c.status === "Pending" || c.status === "Active"
+      const pendingLeaves = leaves.filter(
+        (l) => l.status?.toLowerCase() === "pending"
       ).length;
-
-      // Example: if each student has `roomNo`
+      const activeComplaints = complaints.filter(
+        (c) =>
+          c.status?.toLowerCase() === "pending" ||
+          c.status?.toLowerCase() === "active"
+      ).length;
       const roomsOccupied = students.filter(
         (s) => s.roomNo && s.roomNo.trim() !== ""
       ).length;
@@ -68,7 +78,7 @@ const WardenDashboard = () => {
     }
 
     fetchStats();
-    const interval = setInterval(fetchStats, 30000); // refresh every 30s
+    const interval = setInterval(fetchStats, 30000); // auto-refresh every 30s
     return () => clearInterval(interval);
   }, [navigate]);
 
