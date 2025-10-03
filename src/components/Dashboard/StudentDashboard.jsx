@@ -3,6 +3,9 @@ import { Container, Row, Col, Card, ListGroup, Button, Spinner, Alert } from 're
 import { useNavigate } from 'react-router-dom';
 
 const StudentDashboard = () => {
+  const navigate = useNavigate();
+  const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
+
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,9 +19,6 @@ const StudentDashboard = () => {
   const [outpasses, setOutpasses] = useState([]);
   const [loadingOutpasses, setLoadingOutpasses] = useState(true);
 
-  const navigate = useNavigate();
-  const API_BASE = 'http://localhost:5000/api';
-
   // Fetch logged-in student info
   useEffect(() => {
     const storedStudent = localStorage.getItem('student');
@@ -31,7 +31,7 @@ const StudentDashboard = () => {
     setLoading(false);
   }, [navigate]);
 
-  // Fetch recent leaves
+  // Fetch leaves
   useEffect(() => {
     if (!student?.rollNo) return;
 
@@ -39,11 +39,10 @@ const StudentDashboard = () => {
       try {
         setLoadingLeaves(true);
         const res = await fetch(`${API_BASE}/leaves?rollno=${student.rollNo}`);
-        if (!res.ok) throw new Error('Failed to fetch leaves');
         const data = await res.json();
         setLeaves(Array.isArray(data) ? data.slice(0, 5) : []);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching leaves:', err);
         setError('Error fetching leaves.');
         setLeaves([]);
       } finally {
@@ -54,7 +53,7 @@ const StudentDashboard = () => {
     fetchLeaves();
   }, [student]);
 
-  // Fetch recent complaints
+  // Fetch complaints
   useEffect(() => {
     if (!student?.rollNo) return;
 
@@ -62,11 +61,11 @@ const StudentDashboard = () => {
       try {
         setLoadingComplaints(true);
         const res = await fetch(`${API_BASE}/complaints?rollno=${student.rollNo}`);
-        if (!res.ok) throw new Error('Failed to fetch complaints');
         const data = await res.json();
-        setComplaints(Array.isArray(data) ? data.slice(0, 5) : []);
+        const complaintsList = Array.isArray(data) ? data : Array.isArray(data.complaints) ? data.complaints : [];
+        setComplaints(complaintsList.slice(0, 5));
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching complaints:', err);
         setError('Error fetching complaints.');
         setComplaints([]);
       } finally {
@@ -77,7 +76,7 @@ const StudentDashboard = () => {
     fetchComplaints();
   }, [student]);
 
-  // Fetch recent outpasses
+  // Fetch outpasses
   useEffect(() => {
     if (!student?.rollNo) return;
 
@@ -85,9 +84,7 @@ const StudentDashboard = () => {
       try {
         setLoadingOutpasses(true);
         const res = await fetch(`${API_BASE}/outpasses?rollno=${student.rollNo}`);
-        if (!res.ok) throw new Error('Failed to fetch outpasses');
         const data = await res.json();
-
         const outpassList = Array.isArray(data)
           ? data
           : Array.isArray(data.outpasses)
@@ -95,7 +92,7 @@ const StudentDashboard = () => {
             : [];
         setOutpasses(outpassList.slice(0, 5));
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching outpasses:', err);
         setError('Error fetching outpasses.');
         setOutpasses([]);
       } finally {
@@ -116,8 +113,8 @@ const StudentDashboard = () => {
   const menuItems = [
     { title: 'Leave Application', path: '/student/dashboard/leave', icon: '📝' },
     { title: 'Outpass', path: '/student/dashboard/outpass', icon: '🚪' },
-    { title: 'Complaints', path: '/complaints', icon: '⚠️' },
-    { title: 'Attendance', path: '/attendance', icon: '📊' }
+    { title: 'Complaints', path: '/student/dashboard/complaints', icon: '⚠️' },
+    { title: 'Attendance', path: '/student/dashboard/attendance', icon: '📊' },
   ];
 
   if (loading) return <Spinner animation="border" className="d-block mx-auto my-5" />;

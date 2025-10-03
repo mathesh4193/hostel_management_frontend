@@ -24,26 +24,23 @@ const WardenDashboard = () => {
     roomsOccupied: 0
   });
 
+  const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api"; // Updated backend URL
+
   const fetchStats = async () => {
     try {
-      // Fetch all three endpoints in parallel
       const [studentsRes, leavesRes, complaintsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/students"),
-        axios.get("http://localhost:5000/api/leaves"),
-        axios.get("http://localhost:5000/api/complaints"),
+        axios.get(`${API_BASE}/students`),
+        axios.get(`${API_BASE}/leaves`),
+        axios.get(`${API_BASE}/complaints`),
       ]);
 
-      // Extract arrays (adjust if backend wraps response in { data: [...] })
       const students = studentsRes.data.students || studentsRes.data || [];
       const leaves = leavesRes.data.leaves || leavesRes.data || [];
       const complaints = complaintsRes.data.complaints || complaintsRes.data || [];
 
-      // Count values
       const totalStudents = students.length;
       const pendingLeaves = leaves.filter(l => l.status === "Pending").length;
       const activeComplaints = complaints.filter(c => c.status === "Pending" || c.status === "Active").length;
-
-      // Example: roomsOccupied = number of students with non-empty roomNo
       const roomsOccupied = students.filter(s => s.roomNo && s.roomNo.trim() !== "").length;
 
       setStats({ totalStudents, pendingLeaves, activeComplaints, roomsOccupied });
@@ -63,7 +60,7 @@ const WardenDashboard = () => {
     }
 
     fetchStats();
-    const interval = setInterval(fetchStats, 30000); // auto-refresh every 30s
+    const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, [navigate]);
 

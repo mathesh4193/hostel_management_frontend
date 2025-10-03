@@ -16,7 +16,7 @@ const Leave = () => {
   const [leaves, setLeaves] = useState([]);
   const [loadingLeaves, setLoadingLeaves] = useState(true);
 
-  const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
 
   // 🔹 Form change
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });

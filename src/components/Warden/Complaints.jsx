@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Table, Button, Badge, Spinner, Alert } from 'react-bootstrap';
 
 const Complaints = () => {
-  const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+  const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -13,9 +13,15 @@ const Complaints = () => {
       const res = await fetch(`${API_BASE}/complaints/all`);
       if (!res.ok) throw new Error('Failed to fetch complaints');
       const data = await res.json();
-      setComplaints(Array.isArray(data) ? data : []);
+      // Handle if API wraps response in { complaints: [...] }
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data.complaints)
+          ? data.complaints
+          : [];
+      setComplaints(list);
     } catch (err) {
-      console.error(err);
+      console.error('Fetch complaints error:', err);
       setError(err.message || 'Error fetching complaints');
     } finally {
       setLoading(false);
@@ -37,7 +43,7 @@ const Complaints = () => {
       const updated = await res.json();
       setComplaints(prev => prev.map(c => (c._id === updated._id ? updated : c)));
     } catch (err) {
-      console.error(err);
+      console.error('Update status error:', err);
       setError(err.message || 'Error updating status');
     }
   };

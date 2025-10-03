@@ -6,17 +6,24 @@ const WardenLeave = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const API_BASE = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+  // Use deployed backend URL
+  const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
 
   const fetchLeaves = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE}/leaves`);
+      if (!res.ok) throw new Error('Failed to fetch leave requests');
       const data = await res.json();
-      setLeaves(data);
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data.leaves)
+          ? data.leaves
+          : [];
+      setLeaves(list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch (err) {
-      console.error(err);
-      setError('Error fetching leave requests');
+      console.error('Fetch leaves error:', err);
+      setError(err.message || 'Error fetching leave requests');
     } finally {
       setLoading(false);
     }
@@ -31,19 +38,19 @@ const WardenLeave = () => {
       const res = await fetch(`${API_BASE}/leaves/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error('Failed to update status');
+      if (!res.ok) throw new Error('Failed to update leave status');
       const updatedLeave = await res.json();
-      setLeaves(leaves.map(l => l._id === id ? updatedLeave : l));
+      setLeaves(prev => prev.map(l => l._id === updatedLeave._id ? updatedLeave : l));
     } catch (err) {
-      console.error(err);
-      alert('Failed to update leave status');
+      console.error('Update status error:', err);
+      alert(err.message || 'Failed to update leave status');
     }
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
+    switch ((status || '').toLowerCase()) {
       case 'pending': return <Badge bg="warning">Pending</Badge>;
       case 'approved': return <Badge bg="success">Approved</Badge>;
       case 'rejected': return <Badge bg="danger">Rejected</Badge>;
@@ -51,8 +58,8 @@ const WardenLeave = () => {
     }
   };
 
-  if (loading) return <Spinner animation="border" />;
-  if (error) return <Alert variant="danger">{error}</Alert>;
+  if (loading) return <div className="text-center py-5"><Spinner animation="border" /></div>;
+  if (error) return <Alert variant="danger" className="my-5 text-center">{error}</Alert>;
 
   return (
     <Container className="py-4">
@@ -83,10 +90,23 @@ const WardenLeave = () => {
                   <td>{new Date(leave.endDate).toLocaleDateString()}</td>
                   <td>{getStatusBadge(leave.status)}</td>
                   <td>
-                    {leave.status === 'pending' && (
+                    {leave.status.toLowerCase() === 'pending' && (
                       <>
-                        <Button size="sm" variant="success" className="me-2" onClick={() => updateStatus(leave._id, 'approved')}>Approve</Button>
-                        <Button size="sm" variant="danger" onClick={() => updateStatus(leave._id, 'rejected')}>Reject</Button>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          className="me-2"
+                          onClick={() => updateStatus(leave._id, 'approved')}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => updateStatus(leave._id, 'rejected')}
+                        >
+                          Reject
+                        </Button>
                       </>
                     )}
                   </td>

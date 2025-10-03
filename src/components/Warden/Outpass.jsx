@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Table, Button, Spinner, Alert } from 'react-bootstrap';
 
 const WardenOutpass = () => {
@@ -6,31 +6,38 @@ const WardenOutpass = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const API_BASE = 'http://localhost:5000/api/outpasses';
+  // Use environment variable for API or default to same origin + /api
+  const API_BASE = process.env.REACT_APP_API_URL || `${window.location.origin}/api`;
+
+  const fetchOutpasses = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/outpasses`);
+      if (!res.ok) throw new Error('Failed to fetch outpasses');
+      const data = await res.json();
+      setOutpasses(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Error fetching outpasses');
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE]);
 
   useEffect(() => {
-    const fetchOutpasses = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(API_BASE);
-        if (!res.ok) throw new Error('Failed to fetch outpasses');
-        const data = await res.json();
-        setOutpasses(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOutpasses();
-  }, []);
+  }, [fetchOutpasses]);
 
   const handleStatus = async (id, status) => {
     try {
-      const res = await fetch(`${API_BASE}/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+      const res = await fetch(`${API_BASE}/outpasses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
       if (!res.ok) throw new Error('Failed to update status');
       const updated = await res.json();
-      setOutpasses(outpasses.map(o => o._id === updated._id ? updated : o));
+      setOutpasses(prev => prev.map(o => o._id === updated._id ? updated : o));
     } catch (err) {
       alert(err.message);
     }
@@ -45,13 +52,21 @@ const WardenOutpass = () => {
       <Table striped bordered hover responsive>
         <thead>
           <tr>
-            <th>Name</th><th>Roll No</th><th>Destination</th><th>Purpose</th>
-            <th>Departure</th><th>Return</th><th>Status</th><th>Actions</th>
+            <th>Name</th>
+            <th>Roll No</th>
+            <th>Destination</th>
+            <th>Purpose</th>
+            <th>Departure</th>
+            <th>Return</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {outpasses.length === 0 ? (
-            <tr><td colSpan="8" className="text-center">No outpass requests</td></tr>
+            <tr>
+              <td colSpan="8" className="text-center">No outpass requests</td>
+            </tr>
           ) : (
             outpasses.map(o => (
               <tr key={o._id}>

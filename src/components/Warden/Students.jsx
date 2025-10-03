@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const Students = () => {
@@ -17,34 +17,33 @@ const Students = () => {
     parentContact: ''
   });
 
-  // Fetch all students
-  const fetchStudents = async () => {
+  const API_BASE = process.env.REACT_APP_API_URL || 'https://your-render-backend.onrender.com/api';
+
+  // ✅ Wrap fetchStudents in useCallback to avoid ESLint warning
+  const fetchStudents = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/students');
-      setStudents(response.data);
+      const response = await axios.get(`${API_BASE}/students`);
+      setStudents(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching students', error);
     }
-  };
+  }, [API_BASE]);
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [fetchStudents]); // ✅ safe for ESLint
 
-  // Handle input field change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewStudent({ ...newStudent, [name]: value });
   };
 
-  // Add new student
   const handleAddStudent = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/students', newStudent);
-      alert(response.data.message);
+      const response = await axios.post(`${API_BASE}/students`, newStudent);
+      alert(response.data.message || 'Student added successfully!');
 
-      // Reset form
       setNewStudent({
         name: '',
         rollNo: '',
@@ -56,15 +55,14 @@ const Students = () => {
         contact: '',
         parentContact: ''
       });
-
       setShowForm(false);
-      fetchStudents(); // refresh list
+      fetchStudents();
     } catch (error) {
       console.error('Error adding student', error);
+      alert('Failed to add student');
     }
   };
 
-  // Filter students based on search
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.rollNo.toLowerCase().includes(searchTerm.toLowerCase()) ||

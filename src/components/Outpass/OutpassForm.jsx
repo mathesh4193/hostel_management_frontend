@@ -16,7 +16,7 @@ const OutpassForm = () => {
     returnTime: '',
     emergencyContact: ''
   });
-
+  
   const [validated, setValidated] = useState(false);
   const [submitStatus, setSubmitStatus] = useState({ show: false, message: '', variant: '' });
 
@@ -40,11 +40,11 @@ const OutpassForm = () => {
         returnTime: `${formData.returnDate}T${formData.returnTime}`
       };
 
-      const res = await fetch('http://localhost:5000/api/outpasses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch('https://hostel-management-backend-eo9s.onrender.com/api/outpasses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
       if (!res.ok) throw new Error('Failed to submit outpass');
 
