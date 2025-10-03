@@ -1,12 +1,13 @@
+// src/components/Warden/WardenOutpass.jsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { Container, Table, Button, Spinner, Alert } from 'react-bootstrap';
+import { Container, Table, Button, Spinner, Alert, Modal, Image } from 'react-bootstrap';
 
 const WardenOutpass = () => {
   const [outpasses, setOutpasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showQR, setShowQR] = useState({ show: false, qr: '' });
 
-  // Use environment variable for API or default to same origin + /api
   const API_BASE = process.env.REACT_APP_API_URL || `${window.location.origin}/api`;
 
   const fetchOutpasses = useCallback(async () => {
@@ -17,16 +18,13 @@ const WardenOutpass = () => {
       const data = await res.json();
       setOutpasses(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
       setError(err.message || 'Error fetching outpasses');
     } finally {
       setLoading(false);
     }
   }, [API_BASE]);
 
-  useEffect(() => {
-    fetchOutpasses();
-  }, [fetchOutpasses]);
+  useEffect(() => { fetchOutpasses(); }, [fetchOutpasses]);
 
   const handleStatus = async (id, status) => {
     try {
@@ -59,14 +57,12 @@ const WardenOutpass = () => {
             <th>Departure</th>
             <th>Return</th>
             <th>Status</th>
-            <th>Actions</th>
+            <th>QR / Actions</th>
           </tr>
         </thead>
         <tbody>
           {outpasses.length === 0 ? (
-            <tr>
-              <td colSpan="8" className="text-center">No outpass requests</td>
-            </tr>
+            <tr><td colSpan="8" className="text-center">No outpass requests</td></tr>
           ) : (
             outpasses.map(o => (
               <tr key={o._id}>
@@ -78,11 +74,15 @@ const WardenOutpass = () => {
                 <td>{new Date(o.returnTime).toLocaleString()}</td>
                 <td>{o.status}</td>
                 <td>
-                  {o.status === 'Pending' && (
+                  {o.status === 'Pending' ? (
                     <>
                       <Button size="sm" variant="success" onClick={() => handleStatus(o._id, 'Approved')} className="me-2">Approve</Button>
                       <Button size="sm" variant="danger" onClick={() => handleStatus(o._id, 'Rejected')}>Reject</Button>
                     </>
+                  ) : o.status === 'Approved' ? (
+                    <Button size="sm" variant="info" onClick={() => setShowQR({ show: true, qr: o.qrCode })}>View QR</Button>
+                  ) : (
+                    <span>Rejected</span>
                   )}
                 </td>
               </tr>
@@ -90,6 +90,14 @@ const WardenOutpass = () => {
           )}
         </tbody>
       </Table>
+
+      {/* QR Modal */}
+      <Modal show={showQR.show} onHide={() => setShowQR({ show: false, qr: '' })} centered>
+        <Modal.Header closeButton><Modal.Title>Approved Outpass QR</Modal.Title></Modal.Header>
+        <Modal.Body className="text-center">
+          {showQR.qr ? <Image src={showQR.qr} fluid /> : <p>No QR available</p>}
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 };
