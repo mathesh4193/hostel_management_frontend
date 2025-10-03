@@ -1,0 +1,203 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Students = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    name: '',
+    rollNo: '',
+    regNo: '',
+    roomNo: '',
+    department: '',
+    year: '',
+    address: '',
+    contact: '',
+    parentContact: ''
+  });
+
+  // Fetch all students
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/students');
+      setStudents(response.data);
+    } catch (error) {
+      console.error('Error fetching students', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  // Handle input field change
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewStudent({ ...newStudent, [name]: value });
+  };
+
+  // Add new student
+  const handleAddStudent = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/api/students', newStudent);
+      alert(response.data.message);
+
+      // Reset form
+      setNewStudent({
+        name: '',
+        rollNo: '',
+        regNo: '',
+        roomNo: '',
+        department: '',
+        year: '',
+        address: '',
+        contact: '',
+        parentContact: ''
+      });
+
+      setShowForm(false);
+      fetchStudents(); // refresh list
+    } catch (error) {
+      console.error('Error adding student', error);
+    }
+  };
+
+  // Filter students based on search
+  const filteredStudents = students.filter(student =>
+    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.rollNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.regNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.roomNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#1976d2' }}>
+        Student Directory
+      </h2>
+
+      {/* Search Bar */}
+      <input
+        type="text"
+        placeholder="Search students"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '12px',
+          marginBottom: '20px',
+          borderRadius: '8px',
+          border: '1px solid #1976d2',
+          backgroundColor: '#e3f2fd',
+          color: '#0d47a1',
+          fontWeight: '500'
+        }}
+      />
+
+      {/* Toggle Add Student Form */}
+      <button
+        onClick={() => setShowForm(!showForm)}
+        style={{
+          marginBottom: '20px',
+          padding: '10px 20px',
+          backgroundColor: '#0d47a1',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600'
+        }}
+      >
+        {showForm ? 'Cancel' : 'Add Student'}
+      </button>
+
+      {/* Add Student Form */}
+      {showForm && (
+        <form
+          onSubmit={handleAddStudent}
+          style={{
+            marginBottom: '30px',
+            border: '1px solid #0d47a1',
+            padding: '20px',
+            borderRadius: '12px',
+            backgroundColor: '#bbdefb'
+          }}
+        >
+          <h3 style={{ color: '#0d47a1' }}>Add New Student</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '10px' }}>
+            <input type="text" name="name" placeholder="Name" value={newStudent.name} onChange={handleInputChange} required />
+            <input type="text" name="rollNo" placeholder="Roll No" value={newStudent.rollNo} onChange={handleInputChange} required />
+            <input type="text" name="regNo" placeholder="Registration No" value={newStudent.regNo} onChange={handleInputChange} required />
+            <input type="text" name="roomNo" placeholder="Room No" value={newStudent.roomNo} onChange={handleInputChange} required />
+            <input type="text" name="department" placeholder="Department" value={newStudent.department} onChange={handleInputChange} required />
+            <input type="text" name="year" placeholder="Year" value={newStudent.year} onChange={handleInputChange} required />
+            <input type="text" name="address" placeholder="Address" value={newStudent.address} onChange={handleInputChange} required />
+            <input type="text" name="contact" placeholder="Student Contact" value={newStudent.contact} onChange={handleInputChange} required />
+            <input type="text" name="parentContact" placeholder="Parent Contact" value={newStudent.parentContact} onChange={handleInputChange} required />
+          </div>
+          <button
+            type="submit"
+            style={{
+              marginTop: '15px',
+              padding: '10px 20px',
+              backgroundColor: '#1976d2',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            Submit
+          </button>
+        </form>
+      )}
+
+      {/* Student Table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#1976d2', color: 'white' }}>
+              <th style={tableHeaderStyle}>Name</th>
+              <th style={tableHeaderStyle}>Roll No</th>
+              <th style={tableHeaderStyle}>Reg. No</th>
+              <th style={tableHeaderStyle}>Room No</th>
+              <th style={tableHeaderStyle}>Department</th>
+              <th style={tableHeaderStyle}>Year</th>
+              <th style={tableHeaderStyle}>Address</th>
+              <th style={tableHeaderStyle}>Student Contact</th>
+              <th style={tableHeaderStyle}>Parent Contact</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredStudents.map(student => (
+              <tr key={student._id} style={{ backgroundColor: '#e3f2fd' }}>
+                <td style={tableCellStyle}>{student.name}</td>
+                <td style={tableCellStyle}>{student.rollNo}</td>
+                <td style={tableCellStyle}>{student.regNo}</td>
+                <td style={tableCellStyle}>{student.roomNo}</td>
+                <td style={tableCellStyle}>{student.department}</td>
+                <td style={tableCellStyle}>{student.year}</td>
+                <td style={tableCellStyle}>{student.address}</td>
+                <td style={tableCellStyle}>
+                  <a href={`tel:${student.contact}`} style={linkStyle}>{student.contact}</a>
+                </td>
+                <td style={tableCellStyle}>
+                  <a href={`tel:${student.parentContact}`} style={linkStyle}>{student.parentContact}</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const tableHeaderStyle = { padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' };
+const tableCellStyle = { padding: '12px', borderBottom: '1px solid #ddd' };
+const linkStyle = { color: '#0d47a1', textDecoration: 'none' };
+
+export default Students;
