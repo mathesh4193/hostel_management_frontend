@@ -114,7 +114,7 @@ const StudentDashboard = () => {
     { title: 'Leave Application', path: '/student/dashboard/leave', icon: '📝' },
     { title: 'Outpass', path: '/student/dashboard/outpass', icon: '🚪' },
     { title: 'Complaints', path: '/complaints', icon: '⚠️' },
-    { title: 'Attendance', path: 'attendance', icon: '📊' },
+    { title: 'Attendance', path: '/attendance', icon: '📊' },
   ];
 
   if (loading) return <Spinner animation="border" className="d-block mx-auto my-5" />;
