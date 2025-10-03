@@ -21,27 +21,35 @@ const WardenDashboard = () => {
     totalStudents: 0,
     pendingLeaves: 0,
     activeComplaints: 0,
-    roomsOccupied: 0
+    roomsOccupied: 0,
   });
 
-  const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api"; // Updated backend URL
+  const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api";
 
   const fetchStats = async () => {
     try {
+      // Call all APIs in parallel
       const [studentsRes, leavesRes, complaintsRes] = await Promise.all([
-        axios.get(`${API_BASE}/students`),
-        axios.get(`${API_BASE}/leaves`),
-        axios.get(`${API_BASE}/complaints`),
+        axios.get(`${API_BASE}/students`),   // ✅ students endpoint
+        axios.get(`${API_BASE}/leave`),      // ✅ leave endpoint
+        axios.get(`${API_BASE}/complaint`),  // ✅ complaint endpoint
       ]);
 
+      // Adjust based on backend response
       const students = studentsRes.data.students || studentsRes.data || [];
       const leaves = leavesRes.data.leaves || leavesRes.data || [];
       const complaints = complaintsRes.data.complaints || complaintsRes.data || [];
 
       const totalStudents = students.length;
-      const pendingLeaves = leaves.filter(l => l.status === "Pending").length;
-      const activeComplaints = complaints.filter(c => c.status === "Pending" || c.status === "Active").length;
-      const roomsOccupied = students.filter(s => s.roomNo && s.roomNo.trim() !== "").length;
+      const pendingLeaves = leaves.filter((l) => l.status === "Pending").length;
+      const activeComplaints = complaints.filter(
+        (c) => c.status === "Pending" || c.status === "Active"
+      ).length;
+
+      // Example: if each student has `roomNo`
+      const roomsOccupied = students.filter(
+        (s) => s.roomNo && s.roomNo.trim() !== ""
+      ).length;
 
       setStats({ totalStudents, pendingLeaves, activeComplaints, roomsOccupied });
     } catch (error) {
@@ -60,7 +68,7 @@ const WardenDashboard = () => {
     }
 
     fetchStats();
-    const interval = setInterval(fetchStats, 30000);
+    const interval = setInterval(fetchStats, 30000); // refresh every 30s
     return () => clearInterval(interval);
   }, [navigate]);
 
@@ -111,7 +119,7 @@ const WardenDashboard = () => {
 
       {/* Action Cards */}
       <Grid container spacing={3}>
-        {actionItems.map(item => (
+        {actionItems.map((item) => (
           <Grid item xs={12} sm={6} md={4} key={item.title}>
             <Paper
               elevation={3}
