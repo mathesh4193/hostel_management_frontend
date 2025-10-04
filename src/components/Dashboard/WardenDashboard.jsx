@@ -18,15 +18,17 @@ import axios from "axios";
 const WardenDashboard = () => {
   const navigate = useNavigate();
 
+  // Dashboard stats state
   const [stats, setStats] = useState({
     totalStudents: 0,
     pendingLeaves: 0,
     activeComplaints: 0,
-    roomsOccupied: 0
+    roomsOccupied: 0,
   });
 
   const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api";
 
+  // Fetch dashboard data (students, leaves, complaints)
   const fetchStats = async () => {
     try {
       const [studentsRes, leavesRes, complaintsRes] = await Promise.all([
@@ -35,54 +37,45 @@ const WardenDashboard = () => {
         axios.get(`${API_BASE}/complaints`),
       ]);
 
-      // Students API returns { students: [...] }
       const students = studentsRes.data.students || [];
-
-      // Leaves API returns [] (array directly)
       const leaves = Array.isArray(leavesRes.data)
         ? leavesRes.data
         : leavesRes.data.leaves || [];
-
-      // Complaints API returns [] (array directly)
       const complaints = Array.isArray(complaintsRes.data)
         ? complaintsRes.data
         : complaintsRes.data.complaints || [];
 
-      const totalStudents = students.length;
-      const pendingLeaves = leaves.filter(
-        (l) => l.status?.toLowerCase() === "pending"
-      ).length;
-      const activeComplaints = complaints.filter(
-        (c) =>
-          c.status?.toLowerCase() === "pending" ||
-          c.status?.toLowerCase() === "active"
-      ).length;
-      const roomsOccupied = students.filter(
-        (s) => s.roomNo && s.roomNo.trim() !== ""
-      ).length;
-
-      setStats({ totalStudents, pendingLeaves, activeComplaints, roomsOccupied });
-    } catch (error) {
-      console.error("Error fetching dashboard stats:", error);
+      setStats({
+        totalStudents: students.length,
+        pendingLeaves: leaves.filter(l => l.status?.toLowerCase() === "pending").length,
+        activeComplaints: complaints.filter(
+          c => ["pending", "active"].includes(c.status?.toLowerCase())
+        ).length,
+        roomsOccupied: students.filter(s => s.roomNo?.trim()).length,
+      });
+    } catch (err) {
+      console.error("Failed to fetch dashboard stats:", err);
     }
   };
 
+  // Run once on mount
   useEffect(() => {
-    const wardenAuth =
+    const isWarden =
       localStorage.getItem("role") === "warden" &&
       localStorage.getItem("token");
 
-    if (!wardenAuth) {
-      navigate("/"); // redirect to login if not authorized
+    if (!isWarden) {
+      navigate("/"); // redirect if not authorized
       return;
     }
 
     fetchStats();
-    const interval = setInterval(fetchStats, 30000); // auto-refresh every 30s
+    const interval = setInterval(fetchStats, 30000); // refresh every 30s
     return () => clearInterval(interval);
   }, [navigate]);
 
-  const actionItems = [
+  // Dashboard actions
+  const actions = [
     { title: "Student Management", icon: <PeopleIcon />, path: "/warden/students" },
     { title: "Leave Requests", icon: <AssignmentIcon />, path: "/warden/leave-requests" },
     { title: "Complaints", icon: <ReportProblemIcon />, path: "/warden/complaints" },
@@ -96,44 +89,21 @@ const WardenDashboard = () => {
         Welcome back, Warden!
       </Typography>
 
-      {/* Stats Cards */}
+      {/* Stats Section */}
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 3, bgcolor: "#2c387e", color: "white", borderRadius: 2, height: "140px" }}>
-            <Typography variant="h6">Total Students</Typography>
-            <Typography variant="h3">{stats.totalStudents}</Typography>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 3, bgcolor: "#3949ab", color: "white", borderRadius: 2, height: "140px" }}>
-            <Typography variant="h6">Pending Leaves</Typography>
-            <Typography variant="h3">{stats.pendingLeaves}</Typography>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 3, bgcolor: "#1e88e5", color: "white", borderRadius: 2, height: "140px" }}>
-            <Typography variant="h6">Active Complaints</Typography>
-            <Typography variant="h3">{stats.activeComplaints}</Typography>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 3, bgcolor: "#0277bd", color: "white", borderRadius: 2, height: "140px" }}>
-            <Typography variant="h6">Rooms Occupied</Typography>
-            <Typography variant="h3">{stats.roomsOccupied}</Typography>
-          </Paper>
-        </Grid>
+        <StatCard title="Total Students" value={stats.totalStudents} color="#2c387e" />
+        <StatCard title="Pending Leaves" value={stats.pendingLeaves} color="#3949ab" />
+        <StatCard title="Active Complaints" value={stats.activeComplaints} color="#1e88e5" />
+        <StatCard title="Rooms Occupied" value={stats.roomsOccupied} color="#0277bd" />
       </Grid>
 
-      {/* Action Cards */}
+      {/* Action Section */}
       <Grid container spacing={3}>
-        {actionItems.map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.title}>
+        {actions.map(action => (
+          <Grid item xs={12} sm={6} md={4} key={action.title}>
             <Paper
               elevation={3}
-              onClick={() => navigate(item.path)}
+              onClick={() => navigate(action.path)}
               sx={{
                 bgcolor: "#2c387e",
                 color: "white",
@@ -142,16 +112,16 @@ const WardenDashboard = () => {
                 height: "200px",
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "center",
                 justifyContent: "center",
+                alignItems: "center",
                 gap: 2,
                 cursor: "pointer",
                 transition: "transform 0.3s",
                 "&:hover": { transform: "translateY(-5px)", bgcolor: "#3f51b5" },
               }}
             >
-              <Box sx={{ fontSize: "2.5rem" }}>{item.icon}</Box>
-              <Typography variant="h6">{item.title}</Typography>
+              <Box sx={{ fontSize: "2.5rem" }}>{action.icon}</Box>
+              <Typography variant="h6">{action.title}</Typography>
               <Button
                 variant="contained"
                 sx={{
@@ -169,5 +139,23 @@ const WardenDashboard = () => {
     </Box>
   );
 };
+
+// Small reusable card for stats
+const StatCard = ({ title, value, color }) => (
+  <Grid item xs={12} md={6} lg={3}>
+    <Paper
+      sx={{
+        p: 3,
+        bgcolor: color,
+        color: "white",
+        borderRadius: 2,
+        height: "140px",
+      }}
+    >
+      <Typography variant="h6">{title}</Typography>
+      <Typography variant="h3">{value}</Typography>
+    </Paper>
+  </Grid>
+);
 
 export default WardenDashboard;
