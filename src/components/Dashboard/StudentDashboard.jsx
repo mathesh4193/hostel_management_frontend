@@ -4,8 +4,6 @@ import {
   Row,
   Col,
   Card,
-  ListGroup,
-  Button,
   Spinner,
   Alert,
 } from "react-bootstrap";
@@ -31,14 +29,27 @@ const StudentDashboard = () => {
 
   // Fetch student
   useEffect(() => {
-    const storedStudent = localStorage.getItem("student");
-    if (!storedStudent) {
+    const stored = localStorage.getItem("student");
+    if (!stored) {
       navigate("/login", { replace: true });
       return;
     }
-    setStudent(JSON.parse(storedStudent));
+    setStudent(JSON.parse(stored));
     setLoading(false);
   }, [navigate]);
+
+  const menuItems = [
+    { title: "Profile", path: "/student/profile" },
+    { title: "Leave Application", path: "/student/dashboard/leave" },
+    { title: "Outpass", path: "/student/dashboard/outpass" },
+    { title: "Complaints", path: "/complaints" },
+    { title: "Attendance", path: "/attendance" },
+  ];
+
+  const formatDateTime = (str) => {
+    if (!str) return "";
+    return new Date(str).toLocaleString();
+  };
 
   // Fetch leaves
   useEffect(() => {
@@ -50,7 +61,7 @@ const StudentDashboard = () => {
         const res = await fetch(`${API_BASE}/leaves?rollno=${student.rollNo}`);
         const data = await res.json();
         setLeaves(Array.isArray(data) ? data.slice(0, 5) : []);
-      } catch (err) {
+      } catch {
         setError("Error fetching leaves");
       } finally {
         setLoadingLeaves(false);
@@ -71,13 +82,14 @@ const StudentDashboard = () => {
           `${API_BASE}/complaints?rollno=${student.rollNo}`
         );
         const data = await res.json();
-        const list = Array.isArray(data)
-          ? data
-          : Array.isArray(data.complaints)
-          ? data.complaints
-          : [];
-        setComplaints(list.slice(0, 5));
-      } catch (err) {
+        setComplaints(
+          Array.isArray(data)
+            ? data.slice(0, 5)
+            : Array.isArray(data.complaints)
+            ? data.complaints.slice(0, 5)
+            : []
+        );
+      } catch {
         setError("Error fetching complaints");
       } finally {
         setLoadingComplaints(false);
@@ -91,44 +103,28 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (!student?.rollNo) return;
 
-    const fetchOutpasses = async () => {
+    const fetchOutpass = async () => {
       try {
         setLoadingOutpasses(true);
         const res = await fetch(
           `${API_BASE}/outpasses?rollno=${student.rollNo}`
         );
         const data = await res.json();
-        const list =
-          Array.isArray(data) || Array.isArray(data?.outpasses)
-            ? data.outpasses || data
-            : [];
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data.outpasses)
+          ? data.outpasses
+          : [];
         setOutpasses(list.slice(0, 5));
-      } catch (err) {
+      } catch {
         setError("Error fetching outpasses");
       } finally {
         setLoadingOutpasses(false);
       }
     };
 
-    fetchOutpasses();
+    fetchOutpass();
   }, [student]);
-
-  const logout = () => {
-    localStorage.clear();
-    navigate("/login", { replace: true });
-  };
-
-  const menuItems = [
-    { title: "Leave Application", path: "/student/dashboard/leave" },
-    { title: "Outpass", path: "/student/dashboard/outpass" },
-    { title: "Complaints", path: "/complaints" },
-    { title: "Attendance", path: "/attendance" },
-  ];
-
-  const formatDateTime = (str) => {
-    if (!str) return "";
-    return new Date(str).toLocaleString();
-  };
 
   if (loading)
     return (
@@ -138,156 +134,110 @@ const StudentDashboard = () => {
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <Container className="py-4" style={{ maxWidth: 1200 }}>
+    <Container className="py-4">
       <Row className="g-4">
-        {/* Profile */}
-        <Col lg={4}>
-          <Card className="shadow rounded-4 border-0 profile-card">
-            <Card.Header className="bg-primary text-white text-center rounded-top-4">
-              <h5 className="m-0">Student Profile</h5>
-            </Card.Header>
-            <Card.Body>
-              <ListGroup variant="flush">
-                <ListGroup.Item>
-                  <b>Name:</b> {student.name}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <b>Roll No:</b> {student.rollNo}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <b>Room:</b> {student.roomNo}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <b>Department:</b> {student.department}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <b>Year:</b> {student.year}
-                </ListGroup.Item>
-                <ListGroup.Item>
-                  <b>Parent Contact:</b> {student.parentContact}
-                </ListGroup.Item>
-              </ListGroup>
 
-              <div className="d-grid mt-3">
-                <Button
-                  variant="danger"
-                  onClick={logout}
-                  className="rounded-3 py-2"
-                >
-                  Logout
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {/* Dashboard */}
-        <Col lg={8}>
-          {/* Menu */}
-          <Row className="g-4 mb-3">
+        {/* Menu Grid */}
+        <Col lg={12}>
+          <Row className="g-4 mb-1">
             {menuItems.map((item, i) => (
-              <Col md={6} key={i}>
+              <Col key={i} md={4}>
                 <Card
                   onClick={() => navigate(item.path)}
                   className="shadow-sm rounded-4 text-center p-4 border-0 menu-card"
                   style={{ cursor: "pointer" }}
                 >
-                  <div className="fw-semibold fs-5">{item.title}</div>
-                  <div className="mt-2 small text-muted">
-                    Click to open
-                  </div>
+                  <div className="fw-bold fs-5">{item.title}</div>
+                  <div className="mt-2 small text-muted">Open</div>
                 </Card>
               </Col>
             ))}
           </Row>
+        </Col>
 
-          {/* Recent Data */}
-          <Row className="g-4">
-            {/* Leaves */}
-            <Col md={6}>
-              <Card className="shadow rounded-4 border-0 section-card">
-                <Card.Header className="bg-primary text-white rounded-top-4">
-                  Recent Leaves
-                </Card.Header>
-                <Card.Body>
-                  {loadingLeaves ? (
-                    <Spinner animation="border" />
-                  ) : leaves.length === 0 ? (
-                    <p>No leaves found</p>
-                  ) : (
-                    leaves.map((l) => (
-                      <div key={l._id} className="mb-2">
-                        <b>{l.reason}</b> — {l.status}
-                        <br />
-                        <small className="text-muted">
-                          {formatDateTime(l.createdAt)}
-                        </small>
-                      </div>
-                    ))
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
+        {/* Recent Leaves */}
+        <Col md={6}>
+          <Card className="shadow rounded-4 border-0">
+            <Card.Header className="bg-primary text-white rounded-top-4">
+              Recent Leaves
+            </Card.Header>
+            <Card.Body>
+              {loadingLeaves ? (
+                <Spinner animation="border" />
+              ) : leaves.length === 0 ? (
+                <p>No leaves</p>
+              ) : (
+                leaves.map((l) => (
+                  <div key={l._id} className="mb-2">
+                    <b>{l.reason}</b> — {l.status}
+                    <br />
+                    <small className="text-muted">
+                      {formatDateTime(l.createdAt)}
+                    </small>
+                  </div>
+                ))
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
 
-            {/* Complaints */}
-            <Col md={6}>
-              <Card className="shadow rounded-4 border-0 section-card">
-                <Card.Header className="bg-primary text-white rounded-top-4">
-                  Recent Complaints
-                </Card.Header>
-                <Card.Body>
-                  {loadingComplaints ? (
-                    <Spinner animation="border" />
-                  ) : complaints.length === 0 ? (
-                    <p>No complaints found</p>
-                  ) : (
-                    complaints.map((c) => (
-                      <div key={c._id} className="mb-2">
-                        <b>{c.subject}</b> — {c.status}
-                        <br />
-                        <small className="text-muted">
-                          {formatDateTime(c.createdAt)}
-                        </small>
-                      </div>
-                    ))
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
+        {/* Recent Complaints */}
+        <Col md={6}>
+          <Card className="shadow rounded-4 border-0">
+            <Card.Header className="bg-primary text-white rounded-top-4">
+              Recent Complaints
+            </Card.Header>
+            <Card.Body>
+              {loadingComplaints ? (
+                <Spinner animation="border" />
+              ) : complaints.length === 0 ? (
+                <p>No complaints</p>
+              ) : (
+                complaints.map((c) => (
+                  <div key={c._id} className="mb-2">
+                    <b>{c.subject}</b> — {c.status}
+                    <br />
+                    <small className="text-muted">
+                      {formatDateTime(c.createdAt)}
+                    </small>
+                  </div>
+                ))
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
 
-            {/* Outpasses */}
-            <Col md={12}>
-              <Card className="shadow rounded-4 border-0 section-card">
-                <Card.Header className="bg-primary text-white rounded-top-4">
-                  Recent Outpasses
-                </Card.Header>
-                <Card.Body>
-                  {loadingOutpasses ? (
-                    <Spinner animation="border" />
-                  ) : outpasses.length === 0 ? (
-                    <p>No outpasses found</p>
-                  ) : (
-                    outpasses.map((o) => (
-                      <div key={o._id} className="mb-2">
-                        <b>{o.destination}</b> — {o.status}
-                        <br />
-                        <small className="text-muted">
-                          Departure: {formatDateTime(o.departureTime)}{" "}
-                          {o.returnTime && (
-                            <> | Return: {formatDateTime(o.returnTime)}</>
-                          )}
-                        </small>
-                      </div>
-                    ))
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+        {/* Recent Outpasses */}
+        <Col md={12}>
+          <Card className="shadow rounded-4 border-0">
+            <Card.Header className="bg-primary text-white rounded-top-4">
+              Recent Outpasses
+            </Card.Header>
+            <Card.Body>
+              {loadingOutpasses ? (
+                <Spinner animation="border" />
+              ) : outpasses.length === 0 ? (
+                <p>No outpasses</p>
+              ) : (
+                outpasses.map((o) => (
+                  <div key={o._id} className="mb-2">
+                    <b>{o.destination}</b> — {o.status}
+                    <br />
+                    <small className="text-muted">
+                      Departure: {formatDateTime(o.departureTime)}
+                      {o.returnTime && (
+                        <> | Return: {formatDateTime(o.returnTime)}</>
+                      )}
+                    </small>
+                  </div>
+                ))
+              )}
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
-      {/* Custom UI Styles */}
+      {/* Card Hover Style */}
       <style>{`
         .menu-card {
           transition: all 0.25s ease;
@@ -295,20 +245,7 @@ const StudentDashboard = () => {
         }
         .menu-card:hover {
           transform: translateY(-6px);
-          box-shadow: 0 15px 28px rgba(0,0,0,0.15);
-          background: #ffffff;
-        }
-
-        .section-card {
-          transition: all 0.2s ease;
-        }
-        .section-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 22px rgba(0,0,0,0.12);
-        }
-
-        .profile-card {
-          background: #ffffff;
+          box-shadow: 0 12px 26px rgba(0,0,0,0.15);
         }
       `}</style>
     </Container>
