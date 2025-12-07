@@ -23,48 +23,55 @@ const WardenDashboard = () => {
     pendingLeaves: 0,
     activeComplaints: 0,
     roomsOccupied: 0,
-    pendingOutpass: 0
+    pendingOutpass: 0,
   });
 
   const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api";
 
-  // UNIVERSAL PARSER
-  const getArray = (data, key) => {
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data[key])) return data[key];
-    return [];
-  };
-
-  // FETCH STATS (useCallback FIX)
+  // ---- FETCH STATS (handles both array and {key: array} formats) ----
   const fetchStats = useCallback(async () => {
     try {
-      const [studentsRes, leavesRes, complaintsRes, outpassesRes] = await Promise.all([
-        axios.get(`${API_BASE}/students`),
-        axios.get(`${API_BASE}/leaves`),
-        axios.get(`${API_BASE}/complaints`),
-        axios.get(`${API_BASE}/outpasses`)
-      ]);
+      const [studentsRes, leavesRes, complaintsRes, outpassesRes] =
+        await Promise.all([
+          axios.get(`${API_BASE}/students`),
+          axios.get(`${API_BASE}/leaves`),
+          axios.get(`${API_BASE}/complaints`),
+          axios.get(`${API_BASE}/outpasses`),
+        ]);
 
-      const students = getArray(studentsRes.data, "students");
-      const leaves = getArray(leavesRes.data, "leaves");
-      const complaints = getArray(complaintsRes.data, "complaints");
-      const outpasses = getArray(outpassesRes.data, "outpasses");
+      // Helper to safely extract arrays
+      const extractArray = (resData, key) => {
+        if (Array.isArray(resData)) return resData;
+        if (resData && Array.isArray(resData[key])) return resData[key];
+        return [];
+      };
+
+      const students = extractArray(studentsRes.data, "students");
+      const leaves = extractArray(leavesRes.data, "leaves");
+      const complaints = extractArray(complaintsRes.data, "complaints");
+      const outpasses = extractArray(outpassesRes.data, "outpasses");
 
       setStats({
         totalStudents: students.length,
-        pendingLeaves: leaves.filter((l) => l.status?.toLowerCase() === "pending").length,
+        pendingLeaves: leaves.filter(
+          (l) => l.status?.toLowerCase() === "pending"
+        ).length,
         activeComplaints: complaints.filter((c) =>
           ["pending", "active"].includes(c.status?.toLowerCase())
         ).length,
-        roomsOccupied: students.filter((s) => s.roomNo?.trim()).length,
-        pendingOutpass: outpasses.filter((o) => o.status?.toLowerCase() === "pending").length
+        roomsOccupied: students.filter(
+          (s) => s.roomNo && String(s.roomNo).trim() !== ""
+        ).length,
+        pendingOutpass: outpasses.filter(
+          (o) => o.status?.toLowerCase() === "pending"
+        ).length,
       });
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     }
   }, [API_BASE]);
 
-  // Authentication + Auto Refresh
+  // ---- Authentication + Auto Refresh ----
   useEffect(() => {
     const isWarden =
       localStorage.getItem("role") === "warden" &&
@@ -75,57 +82,77 @@ const WardenDashboard = () => {
       return;
     }
 
-    fetchStats();
-    const interval = setInterval(fetchStats, 30000);
+    fetchStats(); // initial load
 
+    const interval = setInterval(fetchStats, 30000); // refresh every 30s
     return () => clearInterval(interval);
-  }, [navigate, fetchStats]); // FIXED DEPENDENCIES
+  }, [navigate, fetchStats]);
 
+  // ---- Action Buttons ----
   const actions = [
     {
       title: "Student Management",
       icon: <PeopleIcon fontSize="large" />,
       path: "/warden/students",
-      count: stats.totalStudents
+      count: stats.totalStudents,
     },
     {
       title: "Leave Requests",
       icon: <AssignmentIcon fontSize="large" />,
       path: "/warden/leave-requests",
-      count: stats.pendingLeaves
+      count: stats.pendingLeaves,
     },
     {
       title: "Complaints",
       icon: <ReportProblemIcon fontSize="large" />,
       path: "/warden/complaints",
-      count: stats.activeComplaints
+      count: stats.activeComplaints,
     },
     {
       title: "Mess Schedule",
       icon: <RestaurantMenuIcon fontSize="large" />,
       path: "/warden/mess",
-      count: null
+      count: null,
     },
     {
       title: "Outpass Requests",
       icon: <ExitToAppIcon fontSize="large" />,
       path: "/warden/outpass",
-      count: stats.pendingOutpass
-    }
+      count: stats.pendingOutpass,
+    },
   ];
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f5f5f5", p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 4, color: "#2c387e", fontWeight: 700 }}>
+      <Typography
+        variant="h4"
+        sx={{ mb: 4, color: "#2c387e", fontWeight: 700 }}
+      >
         Welcome back, Warden!
       </Typography>
 
       {/* ---------- STATS GRID ---------- */}
       <Grid container spacing={3} mb={4}>
-        <StatCard title="Total Students" value={stats.totalStudents} color="#2c387e" />
-        <StatCard title="Pending Leaves" value={stats.pendingLeaves} color="#3949ab" />
-        <StatCard title="Active Complaints" value={stats.activeComplaints} color="#1e88e5" />
-        <StatCard title="Rooms Occupied" value={stats.roomsOccupied} color="#0277bd" />
+        <StatCard
+          title="Total Students"
+          value={stats.totalStudents}
+          color="#2c387e"
+        />
+        <StatCard
+          title="Pending Leaves"
+          value={stats.pendingLeaves}
+          color="#3949ab"
+        />
+        <StatCard
+          title="Active Complaints"
+          value={stats.activeComplaints}
+          color="#1e88e5"
+        />
+        <StatCard
+          title="Rooms Occupied"
+          value={stats.roomsOccupied}
+          color="#0277bd"
+        />
       </Grid>
 
       {/* ---------- ACTION GRID ---------- */}
@@ -150,9 +177,13 @@ const WardenDashboard = () => {
                 cursor: "pointer",
                 gap: 2,
                 transition: "0.3s",
-                "&:hover": { transform: "translateY(-6px)", bgcolor: "#3f51b5" }
+                "&:hover": {
+                  transform: "translateY(-6px)",
+                  bgcolor: "#3f51b5",
+                },
               }}
             >
+              {/* COUNT BADGE */}
               {action.count !== null && (
                 <Box
                   sx={{
@@ -166,7 +197,7 @@ const WardenDashboard = () => {
                     fontSize: "0.8rem",
                     fontWeight: 700,
                     minWidth: "32px",
-                    textAlign: "center"
+                    textAlign: "center",
                   }}
                 >
                   {action.count}
@@ -184,7 +215,7 @@ const WardenDashboard = () => {
                   bgcolor: "#fff",
                   color: "#2c387e",
                   fontWeight: 600,
-                  "&:hover": { bgcolor: "#e0e0e0" }
+                  "&:hover": { bgcolor: "#e0e0e0" },
                 }}
               >
                 MANAGE
@@ -209,7 +240,7 @@ const StatCard = ({ title, value, color }) => (
         height: "140px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between"
+        justifyContent: "space-between",
       }}
       elevation={3}
     >
