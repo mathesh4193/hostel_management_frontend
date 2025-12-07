@@ -8,52 +8,69 @@ const Leave = () => {
     reason: '',
     startDate: '',
     endDate: '',
-    parentContact: '', // still kept in state, but not shown in form
+    parentContact: '',
     address: ''
   });
+
   const [validated, setValidated] = useState(false);
   const [status, setStatus] = useState({ show: false, message: '', variant: '' });
   const [leaves, setLeaves] = useState([]);
   const [loadingLeaves, setLoadingLeaves] = useState(true);
 
-const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
+  const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
 
-  // 🔹 Form change
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Form change handler
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // 🔹 Fetch leave history
-  const fetchLeaves = useCallback(async (rollno) => {
+  // Parse API arrays safely
+  const getArray = (data, key) => {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data[key])) return data[key];
+    return [];
+  };
+
+  // Fetch Leave History
+  const fetchLeaves = useCallback(async (rollno = formData.rollno) => {
     try {
-      setLoadingLeaves(true);
       if (!rollno) return;
+      setLoadingLeaves(true);
+
       const res = await fetch(`${API_BASE}/leaves?rollno=${rollno}`);
       const data = await res.json();
-      setLeaves(data.sort((a, b) => new Date(b.appliedOn || b.createdAt) - new Date(a.appliedOn || a.createdAt)));
+      const list = getArray(data, "leaves");
+
+      setLeaves(
+        list.sort(
+          (a, b) => new Date(b.appliedOn || b.createdAt) - new Date(a.appliedOn || a.createdAt)
+        )
+      );
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching leaves:", err);
     } finally {
       setLoadingLeaves(false);
     }
-  }, [API_BASE]);
+  }, [formData.rollno]);
 
-  // 🔹 Fetch logged-in student details from localStorage
-  const fetchStudentDetails = useCallback(() => {
-    const studentData = JSON.parse(localStorage.getItem('student') || '{}');
-    if (studentData && studentData.rollNo) {
+  // Load logged-in student
+  useEffect(() => {
+    const s = JSON.parse(localStorage.getItem("student") || "{}");
+    if (s.rollNo) {
       setFormData(prev => ({
         ...prev,
-        rollno: studentData.rollNo,
-        parentContact: studentData.parentContact || ''   // auto-filled internally
+        rollno: s.rollNo,
+        parentContact: s.parentContact || ""
       }));
-      fetchLeaves(studentData.rollNo);
+      fetchLeaves(s.rollNo);
     }
   }, [fetchLeaves]);
 
-  // 🔹 Submit leave
+  // Submit Leave Form
   const handleSubmit = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
-    if (form.checkValidity() === false) {
+
+    if (!form.checkValidity()) {
       e.stopPropagation();
       setValidated(true);
       return;
@@ -61,58 +78,79 @@ const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
 
     try {
       const res = await fetch(`${API_BASE}/leaves`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData) //  still includes parentContact
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
       });
-      if (!res.ok) throw new Error('Submit failed');
 
-      setStatus({ show: true, message: 'Leave request submitted!', variant: 'success' });
+      if (!res.ok) throw new Error("Submit failed");
 
-      // Reset leave-specific fields
+      setStatus({ show: true, message: "Leave request submitted!", variant: "success" });
+
       setFormData(prev => ({
         ...prev,
-        leaveType: '',
-        reason: '',
-        startDate: '',
-        endDate: '',
-        address: ''
+        leaveType: "",
+        reason: "",
+        startDate: "",
+        endDate: "",
+        address: ""
       }));
+
       setValidated(false);
-
-      // Refresh leave history
-      fetchLeaves(formData.rollno);
+      fetchLeaves();
     } catch (err) {
-      console.error(err);
-      setStatus({ show: true, message: 'Error submitting leave request', variant: 'danger' });
+      setStatus({ show: true, message: "Error submitting leave request", variant: "danger" });
     }
   };
 
-  // 🔹 Delete leave
+  // Delete Leave
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this leave request?')) return;
+    if (!window.confirm("Are you sure you want to delete this leave request?")) return;
+
     try {
-      const res = await fetch(`${API_BASE}/leaves/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
+      const res = await fetch(`${API_BASE}/leaves/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+
       setLeaves(prev => prev.filter(l => l._id !== id));
-      setStatus({ show: true, message: 'Leave deleted successfully!', variant: 'success' });
+      setStatus({ show: true, message: "Leave deleted successfully!", variant: "success" });
     } catch (err) {
-      console.error(err);
-      setStatus({ show: true, message: 'Error deleting leave request', variant: 'danger' });
+      setStatus({ show: true, message: "Error deleting leave request", variant: "danger" });
     }
   };
 
+  // Status Badge
   const getStatusBadge = (status) => {
-    switch ((status || '').toLowerCase()) {
-      case 'pending': return <Badge bg="warning">Pending</Badge>;
-      case 'approved': return <Badge bg="success">Approved</Badge>;
-      case 'rejected': return <Badge bg="danger">Rejected</Badge>;
+    switch ((status || "").toLowerCase()) {
+      case "pending": return <Badge bg="warning">Pending</Badge>;
+      case "approved": return <Badge bg="success">Approved</Badge>;
+      case "rejected": return <Badge bg="danger">Rejected</Badge>;
       default: return <Badge bg="secondary">{status}</Badge>;
     }
   };
 
-  // 🔹 Load student info and leave history on mount
-  useEffect(() => { fetchStudentDetails(); }, [fetchStudentDetails]);
+  // 🔄 REALTIME AUTO REFRESH EVERY 10 SECONDS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLeaves();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [fetchLeaves]);
+
+  // ⏰ AUTO REFRESH AT 7:30 AM & 8:00 PM
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const hr = now.getHours();
+      const min = now.getMinutes();
+
+      if ((hr === 7 && min === 30) || (hr === 20 && min === 0)) {
+        fetchLeaves();
+      }
+    }, 60000); // check every 1 minute
+
+    return () => clearInterval(timer);
+  }, [fetchLeaves]);
 
   return (
     <Container className="py-4">
@@ -159,7 +197,6 @@ const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
                 </Form.Group>
               </Col>
             </Row>
-            {/* Removed Parent Contact field */}
             <Form.Group className="mb-3" controlId="address">
               <Form.Label>Address During Leave</Form.Label>
               <Form.Control required type="text" name="address" value={formData.address} onChange={handleChange} />
@@ -170,7 +207,9 @@ const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
               <Form.Control required as="textarea" rows={4} name="reason" value={formData.reason} onChange={handleChange} />
               <Form.Control.Feedback type="invalid">Enter reason</Form.Control.Feedback>
             </Form.Group>
-            <div className="d-grid"><Button type="submit" variant="primary">Submit Leave Request</Button></div>
+            <div className="d-grid">
+              <Button type="submit" variant="primary">Submit Leave Request</Button>
+            </div>
           </Form>
         </Card.Body>
       </Card>

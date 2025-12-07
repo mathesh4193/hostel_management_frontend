@@ -23,67 +23,66 @@ const WardenDashboard = () => {
     pendingLeaves: 0,
     activeComplaints: 0,
     roomsOccupied: 0,
-    pendingOutpass: 0,
+    pendingOutpass: 0
   });
 
   const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api";
 
+  // ---- UNIVERSAL ARRAY PARSER ----
+  const getArray = (data, key) => {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data[key])) return data[key];
+    return [];
+  };
+
+  // ---- FETCH STATS (FIXED VERSION) ----
   const fetchStats = async () => {
     try {
-      const [studentsRes, leavesRes, complaintsRes, outpassRes] = await Promise.all([
+      const [studentsRes, leavesRes, complaintsRes, outpassesRes] = await Promise.all([
         axios.get(`${API_BASE}/students`),
         axios.get(`${API_BASE}/leaves`),
         axios.get(`${API_BASE}/complaints`),
         axios.get(`${API_BASE}/outpasses`)
       ]);
 
-      const students = studentsRes.data.students || [];
-
-      const leaves = Array.isArray(leavesRes.data)
-        ? leavesRes.data
-        : leavesRes.data.leaves || [];
-
-      const complaints = Array.isArray(complaintsRes.data)
-        ? complaintsRes.data
-        : complaintsRes.data.complaints || [];
-
-      const outpasses = Array.isArray(outpassRes.data)
-        ? outpassRes.data
-        : outpassRes.data.outpasses || [];
+      const students = getArray(studentsRes.data, "students");
+      const leaves = getArray(leavesRes.data, "leaves");
+      const complaints = getArray(complaintsRes.data, "complaints");
+      const outpasses = getArray(outpassesRes.data, "outpasses");
 
       setStats({
         totalStudents: students.length,
-        pendingLeaves: leaves.filter(
-          (l) => l.status?.toLowerCase() === "pending"
-        ).length,
-        activeComplaints: complaints.filter((c) =>
+        pendingLeaves: leaves.filter(l => l.status?.toLowerCase() === "pending").length,
+        activeComplaints: complaints.filter(c =>
           ["pending", "active"].includes(c.status?.toLowerCase())
         ).length,
-        roomsOccupied: students.filter((s) => s.roomNo?.trim()).length,
-        pendingOutpass: outpasses.filter(
-          (o) => o.status?.toLowerCase() === "pending"
-        ).length,
+        roomsOccupied: students.filter(s => s.roomNo?.trim()).length,
+        pendingOutpass: outpasses.filter(o => o.status?.toLowerCase() === "pending").length,
       });
+
     } catch (err) {
-      console.error("Failed to fetch dashboard stats:", err);
+      console.error("Dashboard fetch error:", err);
     }
   };
 
+  // ---- Authentication + Auto Refresh ----
   useEffect(() => {
     const isWarden =
       localStorage.getItem("role") === "warden" &&
       localStorage.getItem("token");
 
     if (!isWarden) {
-      navigate("/"); 
+      navigate("/");
       return;
     }
 
     fetchStats();
-    const interval = setInterval(fetchStats, 30000); 
+    const interval = setInterval(fetchStats, 30000);
+
     return () => clearInterval(interval);
   }, [navigate]);
 
+  // ---- Action Buttons ----
   const actions = [
     {
       title: "Student Management",
@@ -123,7 +122,7 @@ const WardenDashboard = () => {
         Welcome back, Warden!
       </Typography>
 
-      {/* Stats Section */}
+      {/* ---------- STATS GRID ---------- */}
       <Grid container spacing={3} mb={4}>
         <StatCard title="Total Students" value={stats.totalStudents} color="#2c387e" />
         <StatCard title="Pending Leaves" value={stats.pendingLeaves} color="#3949ab" />
@@ -131,7 +130,7 @@ const WardenDashboard = () => {
         <StatCard title="Rooms Occupied" value={stats.roomsOccupied} color="#0277bd" />
       </Grid>
 
-      {/* Actions Section */}
+      {/* ---------- ACTION GRID ---------- */}
       <Grid container spacing={3}>
         {actions.map((action) => (
           <Grid item xs={12} sm={6} md={4} key={action.title}>
@@ -144,22 +143,19 @@ const WardenDashboard = () => {
                 p: 3,
                 textAlign: "center",
                 height: "220px",
+                position: "relative",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
-                gap: 2,
-                cursor: "pointer",
-                position: "relative",
                 borderRadius: 3,
-                transition: "transform 0.3s, background-color 0.3s",
-                "&:hover": {
-                  transform: "translateY(-6px)",
-                  bgcolor: "#3f51b5"
-                },
+                cursor: "pointer",
+                gap: 2,
+                transition: "0.3s",
+                "&:hover": { transform: "translateY(-6px)", bgcolor: "#3f51b5" },
               }}
             >
-              {/* Count Badge */}
+              {/* COUNT BADGE */}
               {action.count !== null && (
                 <Box
                   sx={{
@@ -170,7 +166,7 @@ const WardenDashboard = () => {
                     px: 1.5,
                     py: 0.5,
                     borderRadius: "999px",
-                    fontSize: "0.75rem",
+                    fontSize: "0.8rem",
                     fontWeight: 700,
                     minWidth: "32px",
                     textAlign: "center",
@@ -180,14 +176,14 @@ const WardenDashboard = () => {
                 </Box>
               )}
 
-              <Box sx={{ fontSize: "2.5rem" }}>{action.icon}</Box>
+              <Box sx={{ fontSize: "3rem" }}>{action.icon}</Box>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 {action.title}
               </Typography>
+
               <Button
                 variant="contained"
                 sx={{
-                  mt: 1,
                   bgcolor: "#fff",
                   color: "#2c387e",
                   fontWeight: 600,
@@ -204,6 +200,7 @@ const WardenDashboard = () => {
   );
 };
 
+// ---------- STAT CARD COMPONENT ----------
 const StatCard = ({ title, value, color }) => (
   <Grid item xs={12} md={6} lg={3}>
     <Paper
