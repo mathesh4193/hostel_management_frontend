@@ -1,5 +1,5 @@
 // src/components/Warden/WardenDashboard.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Typography,
   Box,
@@ -28,15 +28,15 @@ const WardenDashboard = () => {
 
   const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api";
 
-  // ---- UNIVERSAL ARRAY PARSER ----
+  // UNIVERSAL PARSER
   const getArray = (data, key) => {
     if (Array.isArray(data)) return data;
     if (data && Array.isArray(data[key])) return data[key];
     return [];
   };
 
-  // ---- FETCH STATS (FIXED VERSION) ----
-  const fetchStats = async () => {
+  // FETCH STATS (useCallback FIX)
+  const fetchStats = useCallback(async () => {
     try {
       const [studentsRes, leavesRes, complaintsRes, outpassesRes] = await Promise.all([
         axios.get(`${API_BASE}/students`),
@@ -52,20 +52,19 @@ const WardenDashboard = () => {
 
       setStats({
         totalStudents: students.length,
-        pendingLeaves: leaves.filter(l => l.status?.toLowerCase() === "pending").length,
-        activeComplaints: complaints.filter(c =>
+        pendingLeaves: leaves.filter((l) => l.status?.toLowerCase() === "pending").length,
+        activeComplaints: complaints.filter((c) =>
           ["pending", "active"].includes(c.status?.toLowerCase())
         ).length,
-        roomsOccupied: students.filter(s => s.roomNo?.trim()).length,
-        pendingOutpass: outpasses.filter(o => o.status?.toLowerCase() === "pending").length,
+        roomsOccupied: students.filter((s) => s.roomNo?.trim()).length,
+        pendingOutpass: outpasses.filter((o) => o.status?.toLowerCase() === "pending").length
       });
-
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     }
-  };
+  }, [API_BASE]);
 
-  // ---- Authentication + Auto Refresh ----
+  // Authentication + Auto Refresh
   useEffect(() => {
     const isWarden =
       localStorage.getItem("role") === "warden" &&
@@ -80,9 +79,8 @@ const WardenDashboard = () => {
     const interval = setInterval(fetchStats, 30000);
 
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, [navigate, fetchStats]); // FIXED DEPENDENCIES
 
-  // ---- Action Buttons ----
   const actions = [
     {
       title: "Student Management",
@@ -152,10 +150,9 @@ const WardenDashboard = () => {
                 cursor: "pointer",
                 gap: 2,
                 transition: "0.3s",
-                "&:hover": { transform: "translateY(-6px)", bgcolor: "#3f51b5" },
+                "&:hover": { transform: "translateY(-6px)", bgcolor: "#3f51b5" }
               }}
             >
-              {/* COUNT BADGE */}
               {action.count !== null && (
                 <Box
                   sx={{
@@ -169,7 +166,7 @@ const WardenDashboard = () => {
                     fontSize: "0.8rem",
                     fontWeight: 700,
                     minWidth: "32px",
-                    textAlign: "center",
+                    textAlign: "center"
                   }}
                 >
                   {action.count}
@@ -187,7 +184,7 @@ const WardenDashboard = () => {
                   bgcolor: "#fff",
                   color: "#2c387e",
                   fontWeight: 600,
-                  "&:hover": { bgcolor: "#e0e0e0" },
+                  "&:hover": { bgcolor: "#e0e0e0" }
                 }}
               >
                 MANAGE
@@ -212,7 +209,7 @@ const StatCard = ({ title, value, color }) => (
         height: "140px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        justifyContent: "space-between"
       }}
       elevation={3}
     >
