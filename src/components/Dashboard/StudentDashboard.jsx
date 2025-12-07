@@ -9,6 +9,15 @@ import {
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
+// PREMIUM ICONS
+import {
+  FaUserCircle,
+  FaClipboardCheck,
+  FaExternalLinkAlt,
+  FaExclamationCircle,
+  FaChartLine
+} from "react-icons/fa";
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const API_BASE = "https://hostel-management-backend-eo9s.onrender.com/api";
@@ -26,7 +35,7 @@ const StudentDashboard = () => {
   const [outpasses, setOutpasses] = useState([]);
   const [loadingOutpasses, setLoadingOutpasses] = useState(true);
 
-  // Get logged in student
+  // Fetch student data
   useEffect(() => {
     const stored = localStorage.getItem("student");
     if (!stored) {
@@ -37,12 +46,13 @@ const StudentDashboard = () => {
     setLoading(false);
   }, [navigate]);
 
+  // MENU ITEMS WITH PREMIUM ICONS
   const menuItems = [
-    { title: "Profile", path: "/student/profile" },
-    { title: "Leave Application", path: "/student/dashboard/leave" },
-    { title: "Outpass", path: "/student/dashboard/outpass" },
-    { title: "Complaints", path: "/complaints" },
-    { title: "Attendance", path: "/attendance" },
+    { title: "Profile", path: "/student/profile", icon: <FaUserCircle size={38} /> },
+    { title: "Leave Application", path: "/student/dashboard/leave", icon: <FaClipboardCheck size={38} /> },
+    { title: "Outpass", path: "/student/dashboard/outpass", icon: <FaExternalLinkAlt size={38} /> },
+    { title: "Complaints", path: "/complaints", icon: <FaExclamationCircle size={38} /> },
+    { title: "Attendance", path: "/attendance", icon: <FaChartLine size={38} /> },
   ];
 
   const formatDateTime = (str) =>
@@ -52,73 +62,73 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (!student?.rollNo) return;
 
-    const loadLeaves = async () => {
+    const fetchLeaves = async () => {
       try {
         setLoadingLeaves(true);
         const res = await fetch(`${API_BASE}/leaves?rollno=${student.rollNo}`);
         const data = await res.json();
         setLeaves(Array.isArray(data) ? data.slice(0, 5) : []);
       } catch {
-        setError("Error loading leaves");
+        setError("Error fetching leaves");
       } finally {
         setLoadingLeaves(false);
       }
     };
 
-    loadLeaves();
+    fetchLeaves();
   }, [student]);
 
   // Fetch Complaints
   useEffect(() => {
     if (!student?.rollNo) return;
 
-    const loadComplaints = async () => {
+    const fetchComplaints = async () => {
       try {
         setLoadingComplaints(true);
         const res = await fetch(`${API_BASE}/complaints?rollno=${student.rollNo}`);
         const data = await res.json();
-        setComplaints(
+        const list =
           Array.isArray(data)
-            ? data.slice(0, 5)
+            ? data
             : Array.isArray(data.complaints)
-            ? data.complaints.slice(0, 5)
-            : []
-        );
+            ? data.complaints
+            : [];
+        setComplaints(list.slice(0, 5));
       } catch {
-        setError("Error loading complaints");
+        setError("Error fetching complaints");
       } finally {
         setLoadingComplaints(false);
       }
     };
 
-    loadComplaints();
+    fetchComplaints();
   }, [student]);
 
   // Fetch Outpasses
   useEffect(() => {
     if (!student?.rollNo) return;
 
-    const loadOutpass = async () => {
+    const fetchOutpass = async () => {
       try {
         setLoadingOutpasses(true);
         const res = await fetch(`${API_BASE}/outpasses?rollno=${student.rollNo}`);
         const data = await res.json();
 
-        const list = Array.isArray(data)
-          ? data
-          : Array.isArray(data.outpasses)
-          ? data.outpasses
-          : [];
+        const list =
+          Array.isArray(data) ||
+          Array.isArray(data.outpasses)
+            ? data.outpasses || data
+            : [];
 
         setOutpasses(list.slice(0, 5));
       } catch {
-        setError("Error loading outpasses");
+        setError("Error fetching outpasses");
       } finally {
         setLoadingOutpasses(false);
       }
     };
 
-    loadOutpass();
+    fetchOutpass();
   }, [student]);
 
   if (loading)
@@ -127,45 +137,43 @@ const StudentDashboard = () => {
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <Container className="py-4 high-dashboard">
-      
-      {/* Menu Section */}
-      <Row className="g-4 mb-4">
-        {menuItems.map((item, i) => (
-          <Col key={i} sm={6} lg={4}>
-            <Card
-              onClick={() => navigate(item.path)}
-              className="menu-block glass-card text-center p-4 rounded-4"
-            >
-              <div className="menu-title">{item.title}</div>
-              <small className="text-muted">Tap to open</small>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      {/* Recent Data Section */}
+    <Container className="py-4">
       <Row className="g-4">
 
-        {/* Leaves */}
+        {/* MENU GRID */}
+        <Col lg={12}>
+          <Row className="g-4 mb-3">
+            {menuItems.map((item, i) => (
+              <Col key={i} md={4}>
+                <Card
+                  onClick={() => navigate(item.path)}
+                  className="menu-card text-center p-4 shadow-sm rounded-4 border-0"
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="menu-icon mb-3">{item.icon}</div>
+                  <div className="menu-title fw-semibold fs-5">{item.title}</div>
+                  <small className="text-muted">Open</small>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Col>
+
+        {/* Recent Leaves */}
         <Col md={6}>
           <Card className="data-card shadow rounded-4 border-0">
             <Card.Header className="section-header">
               Recent Leaves
             </Card.Header>
             <Card.Body>
-              {loadingLeaves ? (
-                <Spinner animation="border" />
-              ) : leaves.length === 0 ? (
+              {loadingLeaves ? <Spinner animation="border" /> : leaves.length === 0 ? (
                 <p>No leaves found</p>
               ) : (
-                leaves.map((item) => (
-                  <div key={item._id} className="record">
-                    <strong>{item.reason}</strong> — {item.status}
+                leaves.map((l) => (
+                  <div key={l._id} className="record">
+                    <strong>{l.reason}</strong> — {l.status}
                     <br />
-                    <small className="text-muted">
-                      {formatDateTime(item.createdAt)}
-                    </small>
+                    <small className="text-muted">{formatDateTime(l.createdAt)}</small>
                   </div>
                 ))
               )}
@@ -173,25 +181,21 @@ const StudentDashboard = () => {
           </Card>
         </Col>
 
-        {/* Complaints */}
+        {/* Recent Complaints */}
         <Col md={6}>
           <Card className="data-card shadow rounded-4 border-0">
             <Card.Header className="section-header">
               Recent Complaints
             </Card.Header>
             <Card.Body>
-              {loadingComplaints ? (
-                <Spinner animation="border" />
-              ) : complaints.length === 0 ? (
+              {loadingComplaints ? <Spinner animation="border" /> : complaints.length === 0 ? (
                 <p>No complaints found</p>
               ) : (
                 complaints.map((c) => (
                   <div key={c._id} className="record">
                     <strong>{c.subject}</strong> — {c.status}
                     <br />
-                    <small className="text-muted">
-                      {formatDateTime(c.createdAt)}
-                    </small>
+                    <small className="text-muted">{formatDateTime(c.createdAt)}</small>
                   </div>
                 ))
               )}
@@ -199,16 +203,14 @@ const StudentDashboard = () => {
           </Card>
         </Col>
 
-        {/* Outpasses */}
+        {/* Recent Outpasses */}
         <Col md={12}>
           <Card className="data-card shadow rounded-4 border-0">
             <Card.Header className="section-header">
               Recent Outpasses
             </Card.Header>
             <Card.Body>
-              {loadingOutpasses ? (
-                <Spinner animation="border" />
-              ) : outpasses.length === 0 ? (
+              {loadingOutpasses ? <Spinner animation="border" /> : outpasses.length === 0 ? (
                 <p>No outpasses found</p>
               ) : (
                 outpasses.map((o) => (
@@ -216,10 +218,8 @@ const StudentDashboard = () => {
                     <strong>{o.destination}</strong> — {o.status}
                     <br />
                     <small className="text-muted">
-                      Departure: {formatDateTime(o.departureTime)}  
-                      {o.returnTime && (
-                        <> | Return: {formatDateTime(o.returnTime)}</>
-                      )}
+                      Departure: {formatDateTime(o.departureTime)}
+                      {o.returnTime && <> | Return: {formatDateTime(o.returnTime)}</>}
                     </small>
                   </div>
                 ))
@@ -229,61 +229,38 @@ const StudentDashboard = () => {
         </Col>
       </Row>
 
-      {/* Custom CSS */}
+      {/* CSS */}
       <style>{`
-        .high-dashboard {
-          animation: fadeIn 0.5s ease-in-out;
-        }
-
-        /* Menu blocks */
-        .menu-block {
-          cursor: pointer;
-          font-size: 1.2rem;
-          padding: 28px 20px;
+        .menu-card {
+          background: #ffffff;
           transition: 0.3s ease;
-          border-radius: 20px;
+          border-radius: 22px;
         }
-
-        .menu-title {
-          font-weight: 600;
-          font-size: 1.4rem;
-          margin-bottom: 5px;
-        }
-
-        .glass-card {
-          background: rgba(255, 255, 255, 0.55);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.25);
-        }
-
-        .menu-block:hover {
+        .menu-card:hover {
           transform: translateY(-6px);
-          box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+          box-shadow: 0 14px 28px rgba(0,0,0,0.12);
         }
-
-        /* Section headers */
+        .menu-icon {
+          color: #0d6efd;
+          transition: 0.3s ease;
+        }
+        .menu-card:hover .menu-icon {
+          color: #0054d3;
+          transform: translateY(-4px);
+        }
         .section-header {
           background: linear-gradient(135deg, #0d6efd, #3a8bfd);
           color: white;
           font-weight: 600;
-          border-radius: 20px 20px 0 0;
           padding: 12px 18px;
+          border-radius: 20px 20px 0 0;
         }
-
-        /* Records */
         .record {
           padding: 10px 0;
-          border-bottom: 1px solid #e1e1e1;
+          border-bottom: 1px solid #e5e5e5;
         }
-
         .record:last-child {
           border-bottom: none;
-        }
-
-        /* Fade animation */
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </Container>
