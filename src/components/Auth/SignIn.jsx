@@ -12,7 +12,7 @@ const SignIn = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // ✅ Backend base URL (Render deployment)
+  //  Backend base URL (Render deployment)
   const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com';
 
   const handleRoleChange = (role) => {
@@ -41,7 +41,7 @@ const SignIn = () => {
           ? { rollNo: userId, regNo: password }
           : { userId, password };
 
-      // ✅ Now call your deployed backend
+      //  Now call your deployed backend
       const res = await axios.post(`${API_BASE}${endpoint}`, payload);
 
       // Store info in localStorage

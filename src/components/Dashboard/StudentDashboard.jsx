@@ -1,14 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, ListGroup, Button, Spinner, Alert } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  ListGroup,
+  Button,
+  Spinner,
+  Alert,
+} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
+  const API_BASE =
+    "https://hostel-management-backend-eo9s.onrender.com/api";
 
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const [leaves, setLeaves] = useState([]);
   const [loadingLeaves, setLoadingLeaves] = useState(true);
@@ -19,15 +29,14 @@ const StudentDashboard = () => {
   const [outpasses, setOutpasses] = useState([]);
   const [loadingOutpasses, setLoadingOutpasses] = useState(true);
 
-  // Fetch logged-in student info
+  // Fetch student
   useEffect(() => {
-    const storedStudent = localStorage.getItem('student');
+    const storedStudent = localStorage.getItem("student");
     if (!storedStudent) {
-      navigate('/login', { replace: true });
+      navigate("/login", { replace: true });
       return;
     }
-    const s = JSON.parse(storedStudent);
-    setStudent(s);
+    setStudent(JSON.parse(storedStudent));
     setLoading(false);
   }, [navigate]);
 
@@ -42,9 +51,7 @@ const StudentDashboard = () => {
         const data = await res.json();
         setLeaves(Array.isArray(data) ? data.slice(0, 5) : []);
       } catch (err) {
-        console.error('Error fetching leaves:', err);
-        setError('Error fetching leaves.');
-        setLeaves([]);
+        setError("Error fetching leaves");
       } finally {
         setLoadingLeaves(false);
       }
@@ -60,14 +67,18 @@ const StudentDashboard = () => {
     const fetchComplaints = async () => {
       try {
         setLoadingComplaints(true);
-        const res = await fetch(`${API_BASE}/complaints?rollno=${student.rollNo}`);
+        const res = await fetch(
+          `${API_BASE}/complaints?rollno=${student.rollNo}`
+        );
         const data = await res.json();
-        const complaintsList = Array.isArray(data) ? data : Array.isArray(data.complaints) ? data.complaints : [];
-        setComplaints(complaintsList.slice(0, 5));
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data.complaints)
+          ? data.complaints
+          : [];
+        setComplaints(list.slice(0, 5));
       } catch (err) {
-        console.error('Error fetching complaints:', err);
-        setError('Error fetching complaints.');
-        setComplaints([]);
+        setError("Error fetching complaints");
       } finally {
         setLoadingComplaints(false);
       }
@@ -83,18 +94,17 @@ const StudentDashboard = () => {
     const fetchOutpasses = async () => {
       try {
         setLoadingOutpasses(true);
-        const res = await fetch(`${API_BASE}/outpasses?rollno=${student.rollNo}`);
+        const res = await fetch(
+          `${API_BASE}/outpasses?rollno=${student.rollNo}`
+        );
         const data = await res.json();
-        const outpassList = Array.isArray(data)
-          ? data
-          : Array.isArray(data.outpasses)
-            ? data.outpasses
+        const list =
+          Array.isArray(data) || Array.isArray(data?.outpasses)
+            ? data.outpasses || data
             : [];
-        setOutpasses(outpassList.slice(0, 5));
+        setOutpasses(list.slice(0, 5));
       } catch (err) {
-        console.error('Error fetching outpasses:', err);
-        setError('Error fetching outpasses.');
-        setOutpasses([]);
+        setError("Error fetching outpasses");
       } finally {
         setLoadingOutpasses(false);
       }
@@ -103,141 +113,204 @@ const StudentDashboard = () => {
     fetchOutpasses();
   }, [student]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('student');
-    localStorage.removeItem('role');
-    localStorage.removeItem('token');
-    navigate('/login', { replace: true });
+  const logout = () => {
+    localStorage.clear();
+    navigate("/login", { replace: true });
   };
 
   const menuItems = [
-    { title: 'Leave Application', path: '/student/dashboard/leave', icon: '📝' },
-    { title: 'Outpass', path: '/student/dashboard/outpass', icon: '🚪' },
-    { title: 'Complaints', path: '/complaints', icon: '⚠️' },
-    { title: 'Attendance', path: '/attendance', icon: '📊' },
+    { title: "Leave Application", path: "/student/dashboard/leave" },
+    { title: "Outpass", path: "/student/dashboard/outpass" },
+    { title: "Complaints", path: "/complaints" },
+    { title: "Attendance", path: "/attendance" },
   ];
 
-  if (loading) return <Spinner animation="border" className="d-block mx-auto my-5" />;
-  if (error) return <Alert variant="danger" className="my-5 text-center">{error}</Alert>;
-
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? '' : d.toLocaleString();
+  const formatDateTime = (str) => {
+    if (!str) return "";
+    return new Date(str).toLocaleString();
   };
 
+  if (loading)
+    return (
+      <Spinner animation="border" className="d-block mx-auto mt-5" />
+    );
+
+  if (error) return <Alert variant="danger">{error}</Alert>;
+
   return (
-    <Container className="py-5">
-      <Row className="mb-4">
+    <Container className="py-4" style={{ maxWidth: 1200 }}>
+      <Row className="g-4">
         {/* Profile */}
-        <Col md={4}>
-          <Card className="shadow-sm">
-            <Card.Header className="bg-primary text-white text-center">
-              <h4>My Profile</h4>
+        <Col lg={4}>
+          <Card className="shadow rounded-4 border-0 profile-card">
+            <Card.Header className="bg-primary text-white text-center rounded-top-4">
+              <h5 className="m-0">Student Profile</h5>
             </Card.Header>
             <Card.Body>
               <ListGroup variant="flush">
-                <ListGroup.Item><strong>Name:</strong> {student.name}</ListGroup.Item>
-                <ListGroup.Item><strong>Roll Number:</strong> {student.rollNo}</ListGroup.Item>
-                <ListGroup.Item><strong>Room No:</strong> {student.roomNo}</ListGroup.Item>
-                <ListGroup.Item><strong>Department:</strong> {student.department}</ListGroup.Item>
-                <ListGroup.Item><strong>Year:</strong> {student.year}</ListGroup.Item>
-                <ListGroup.Item><strong>Parent Contact:</strong> {student.parentContact}</ListGroup.Item>
+                <ListGroup.Item>
+                  <b>Name:</b> {student.name}
+                </ListGroup.Item>
+                <ListGroup.Item>
+                  <b>Roll No:</b> {student.rollNo}
+                </ListGroup.Item>
+                <ListGroup.Item>
+                  <b>Room:</b> {student.roomNo}
+                </ListGroup.Item>
+                <ListGroup.Item>
+                  <b>Department:</b> {student.department}
+                </ListGroup.Item>
+                <ListGroup.Item>
+                  <b>Year:</b> {student.year}
+                </ListGroup.Item>
+                <ListGroup.Item>
+                  <b>Parent Contact:</b> {student.parentContact}
+                </ListGroup.Item>
               </ListGroup>
+
+              <div className="d-grid mt-3">
+                <Button
+                  variant="danger"
+                  onClick={logout}
+                  className="rounded-3 py-2"
+                >
+                  Logout
+                </Button>
+              </div>
             </Card.Body>
           </Card>
-          <div className="d-grid mt-3">
-            <Button variant="danger" onClick={handleLogout}>Logout</Button>
-          </div>
         </Col>
 
         {/* Dashboard */}
-        <Col md={8}>
+        <Col lg={8}>
           {/* Menu */}
-          <Row className="g-4 mb-4">
-            {menuItems.map((item, idx) => (
-              <Col key={idx} md={6}>
+          <Row className="g-4 mb-3">
+            {menuItems.map((item, i) => (
+              <Col md={6} key={i}>
                 <Card
-                  className="h-100 text-center hover-card"
                   onClick={() => navigate(item.path)}
-                  style={{ cursor: 'pointer' }}
+                  className="shadow-sm rounded-4 text-center p-4 border-0 menu-card"
+                  style={{ cursor: "pointer" }}
                 >
-                  <Card.Body>
-                    <div className="display-4 mb-3">{item.icon}</div>
-                    <Card.Title>{item.title}</Card.Title>
-                  </Card.Body>
+                  <div className="fw-semibold fs-5">{item.title}</div>
+                  <div className="mt-2 small text-muted">
+                    Click to open
+                  </div>
                 </Card>
               </Col>
             ))}
           </Row>
 
-          {/* Recent Leaves */}
-          <Row>
+          {/* Recent Data */}
+          <Row className="g-4">
+            {/* Leaves */}
             <Col md={6}>
-              <Card className="mb-4">
-                <Card.Header className="bg-primary text-white">Recent Leaves</Card.Header>
+              <Card className="shadow rounded-4 border-0 section-card">
+                <Card.Header className="bg-primary text-white rounded-top-4">
+                  Recent Leaves
+                </Card.Header>
                 <Card.Body>
-                  {loadingLeaves ? <Spinner animation="border" /> :
-                    leaves.length === 0 ? <p>No recent leaves</p> :
-                      <ul className="list-unstyled">
-                        {leaves.map(l => (
-                          <li key={l._id}>
-                            <strong>{l.reason || l.purpose}</strong> - {l.status}<br />
-                            <small>{formatDateTime(l.createdAt)}</small>
-                          </li>
-                        ))}
-                      </ul>
-                  }
+                  {loadingLeaves ? (
+                    <Spinner animation="border" />
+                  ) : leaves.length === 0 ? (
+                    <p>No leaves found</p>
+                  ) : (
+                    leaves.map((l) => (
+                      <div key={l._id} className="mb-2">
+                        <b>{l.reason}</b> — {l.status}
+                        <br />
+                        <small className="text-muted">
+                          {formatDateTime(l.createdAt)}
+                        </small>
+                      </div>
+                    ))
+                  )}
                 </Card.Body>
               </Card>
             </Col>
 
-            {/* Recent Complaints */}
+            {/* Complaints */}
             <Col md={6}>
-              <Card className="mb-4">
-                <Card.Header className="bg-primary text-white">Recent Complaints</Card.Header>
+              <Card className="shadow rounded-4 border-0 section-card">
+                <Card.Header className="bg-primary text-white rounded-top-4">
+                  Recent Complaints
+                </Card.Header>
                 <Card.Body>
-                  {loadingComplaints ? <Spinner animation="border" /> :
-                    complaints.length === 0 ? <p>No recent complaints</p> :
-                      <ul className="list-unstyled">
-                        {complaints.map(c => (
-                          <li key={c._id}>
-                            <strong>{c.subject}</strong> - {c.status}<br />
-                            <small>{formatDateTime(c.createdAt)}</small>
-                          </li>
-                        ))}
-                      </ul>
-                  }
+                  {loadingComplaints ? (
+                    <Spinner animation="border" />
+                  ) : complaints.length === 0 ? (
+                    <p>No complaints found</p>
+                  ) : (
+                    complaints.map((c) => (
+                      <div key={c._id} className="mb-2">
+                        <b>{c.subject}</b> — {c.status}
+                        <br />
+                        <small className="text-muted">
+                          {formatDateTime(c.createdAt)}
+                        </small>
+                      </div>
+                    ))
+                  )}
                 </Card.Body>
               </Card>
             </Col>
-          </Row>
 
-          {/* Recent Outpasses */}
-          <Row>
+            {/* Outpasses */}
             <Col md={12}>
-              <Card className="mb-4">
-                <Card.Header className="bg-primary text-white">Recent Outpasses</Card.Header>
+              <Card className="shadow rounded-4 border-0 section-card">
+                <Card.Header className="bg-primary text-white rounded-top-4">
+                  Recent Outpasses
+                </Card.Header>
                 <Card.Body>
-                  {loadingOutpasses ? <Spinner animation="border" /> :
-                    outpasses.length === 0 ? <p>No recent outpasses</p> :
-                      <ul className="list-unstyled">
-                        {outpasses.map(o => (
-                          <li key={o._id}>
-                            <strong>{o.destination}</strong> - {o.status}<br />
-                            {o.departureTime && o.returnTime && (
-                              <>Departure: {formatDateTime(o.departureTime)} | Return: {formatDateTime(o.returnTime)}</>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                  }
+                  {loadingOutpasses ? (
+                    <Spinner animation="border" />
+                  ) : outpasses.length === 0 ? (
+                    <p>No outpasses found</p>
+                  ) : (
+                    outpasses.map((o) => (
+                      <div key={o._id} className="mb-2">
+                        <b>{o.destination}</b> — {o.status}
+                        <br />
+                        <small className="text-muted">
+                          Departure: {formatDateTime(o.departureTime)}{" "}
+                          {o.returnTime && (
+                            <> | Return: {formatDateTime(o.returnTime)}</>
+                          )}
+                        </small>
+                      </div>
+                    ))
+                  )}
                 </Card.Body>
               </Card>
             </Col>
           </Row>
         </Col>
       </Row>
+
+      {/* Custom UI Styles */}
+      <style>{`
+        .menu-card {
+          transition: all 0.25s ease;
+          background: linear-gradient(145deg, #ffffff, #f3f4f7);
+        }
+        .menu-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 15px 28px rgba(0,0,0,0.15);
+          background: #ffffff;
+        }
+
+        .section-card {
+          transition: all 0.2s ease;
+        }
+        .section-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 22px rgba(0,0,0,0.12);
+        }
+
+        .profile-card {
+          background: #ffffff;
+        }
+      `}</style>
     </Container>
   );
 };

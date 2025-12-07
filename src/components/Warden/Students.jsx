@@ -22,14 +22,14 @@ const Students = () => {
 
   const API_BASE = process.env.REACT_APP_API_URL || 'https://hostel-management-backend-eo9s.onrender.com/api';
 
-  // ✅ Fetch students from API
+  //  Fetch students from API
   const fetchStudents = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
       const response = await axios.get(`${API_BASE}/students`);
       console.log('API response:', response.data);
-      // ✅ Fix: access response.data.students
+      //  Fix: access response.data.students
       setStudents(Array.isArray(response.data.students) ? response.data.students : []);
     } catch (err) {
       console.error('Error fetching students', err);

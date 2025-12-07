@@ -63,7 +63,7 @@ const API_BASE = 'https://hostel-management-backend-eo9s.onrender.com/api';
       const res = await fetch(`${API_BASE}/leaves`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData) // ✅ still includes parentContact
+        body: JSON.stringify(formData) //  still includes parentContact
       });
       if (!res.ok) throw new Error('Submit failed');
 

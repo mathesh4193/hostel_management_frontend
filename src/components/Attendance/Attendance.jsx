@@ -115,7 +115,7 @@ const Attendance = () => {
                     <p className="mb-2">
                       <strong>Status: </strong>
                       <span className={`badge ${isInCampus ? "bg-success" : "bg-danger"} fs-6`}>
-                        {isInCampus ? "PRESENT ✅" : "ABSENT ❌"}
+                        {isInCampus ? "PRESENT " : "ABSENT "}
                       </span>
                     </p>
                     <p className="mb-0"><strong>Your Location: </strong>{address || "Fetching address..."}</p>
