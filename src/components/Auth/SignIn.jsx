@@ -63,40 +63,40 @@ const SignIn = () => {
   };
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={6} lg={5}>
-          <Card className="shadow-sm">
-            <Card.Body className="p-4">
-              <h2 className="text-center mb-4">Sign In</h2>
+    <div className="signin-bg py-5">
+      <Container>
+        <Row className="justify-content-center">
+          <Col md={6} lg={5}>
+            <Card className={`signin-card fade-in-up role-${activeRole}`}>
+              <Card.Body className="p-4">
+                <h2 className="text-center mb-1">Sign In</h2>
+                <p className="text-center text-muted mb-4">Access your dashboard</p>
 
-              {error && <Alert variant="danger">{error}</Alert>}
+                {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
 
-              {/* Role Selector */}
-              <div className="mb-4 text-center">
-                <p>Please select your role and enter credentials</p>
-                <div className="d-flex mb-4">
-                  <Button
-                    variant={activeRole === 'student' ? 'primary' : 'outline-primary'}
-                    className="flex-grow-1 me-2"
-                    onClick={() => handleRoleChange('student')}
-                  >
-                    Student <br />
-                    <small>Roll Number & Password</small>
-                  </Button>
+                <div className="mb-3 text-center">
+                  <div className="d-flex mb-3">
+                    <Button
+                      variant={activeRole === 'student' ? 'primary' : 'outline-primary'}
+                      className={`flex-grow-1 me-2 role-toggle-btn ${activeRole === 'student' ? 'active' : ''}`}
+                      onClick={() => handleRoleChange('student')}
+                    >
+                      Student<br />
+                      <small>Roll Number & Password</small>
+                    </Button>
 
-                  <Button
-                    variant={activeRole === 'warden' ? 'primary' : 'outline-primary'}
-                    className="flex-grow-1"
-                    onClick={() => handleRoleChange('warden')}
-                  >
-                    Warden <br />
-                    <small>ID & Password</small>
-                  </Button>
+                    <Button
+                      variant={activeRole === 'warden' ? 'primary' : 'outline-primary'}
+                      className={`flex-grow-1 role-toggle-btn ${activeRole === 'warden' ? 'active' : ''}`}
+                      onClick={() => handleRoleChange('warden')}
+                    >
+                      Warden<br />
+                      <small>ID & Password</small>
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
                   <Form.Label>{activeRole === 'student' ? 'Roll Number' : 'Warden ID'}</Form.Label>
                   <Form.Control
@@ -107,7 +107,7 @@ const SignIn = () => {
                   />
                 </Form.Group>
 
-                <Form.Group className="mb-4">
+                  <Form.Group className="mb-4">
                   <Form.Label>{activeRole === 'student' ? 'Registration Number' : 'Password'}</Form.Label>
                   <div className="position-relative">
                     <Form.Control
@@ -125,23 +125,24 @@ const SignIn = () => {
                       {showPassword ? 'Hide' : 'Show'}
                     </Button>
                   </div>
-                </Form.Group>
+                  </Form.Group>
 
-                <Button variant="primary" type="submit" className="w-100 py-2 mb-3">
-                  Sign In
-                </Button>
+                  <Button variant="primary" type="submit" className="w-100 py-2 mb-3 glow-btn">
+                    Sign In
+                  </Button>
 
-                <div className="text-center">
-                  <a href="#forgot-password" className="text-decoration-none">
-                    Forgot Password?
-                  </a>
-                </div>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                  <div className="text-center">
+                    <a href="#forgot-password" className="text-decoration-none">
+                      Forgot Password?
+                    </a>
+                  </div>
+                </Form>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 };
 

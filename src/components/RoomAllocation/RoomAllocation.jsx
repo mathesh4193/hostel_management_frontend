@@ -1,26 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Paper, 
-  Typography, 
-  TextField, 
-  Button, 
+import React, { useState, useEffect } from "react";
+import {
+  Container,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow
-} from '@mui/material';
-import { roomService } from '../../services/api';
+  Form,
+  Row,
+  Col,
+  Button,
+  Badge,
+  Card,
+} from "react-bootstrap";
+
+import {
+  FaBed,
+  FaArrowLeft,
+  FaPlus,
+  FaHistory,
+  FaUser,
+  FaDoorOpen,
+  FaCalendarAlt,
+} from "react-icons/fa";
+
+import { useNavigate } from "react-router-dom";
+import { roomService } from "../../services/api";
 
 const RoomAllocation = () => {
+  const navigate = useNavigate();
+
   const [allocations, setAllocations] = useState([]);
   const [formData, setFormData] = useState({
-    student: '',
-    room: '',
-    startDate: '',
-    endDate: ''
+    student: "",
+    room: "",
+    startDate: "",
+    endDate: "",
   });
 
   useEffect(() => {
@@ -29,121 +40,179 @@ const RoomAllocation = () => {
 
   const fetchAllocations = async () => {
     try {
-      const response = await roomService.getRoomAllocations();
-      setAllocations(response.data);
-    } catch (error) {
-      console.error('Error fetching allocations:', error);
+      const res = await roomService.getRoomAllocations();
+      setAllocations(res.data || []);
+    } catch (err) {
+      console.log(err);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       await roomService.allocateRoom(formData);
       fetchAllocations();
+
       setFormData({
-        student: '',
-        room: '',
-        startDate: '',
-        endDate: ''
+        student: "",
+        room: "",
+        startDate: "",
+        endDate: "",
       });
-    } catch (error) {
-      console.error('Error allocating room:', error);
+    } catch (err) {
+      alert("Allocation failed");
     }
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Room Allocation
-      </Typography>
+    <div className="ra-root">
+      <Container>
 
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Student ID"
-            name="student"
-            value={formData.student}
-            onChange={handleChange}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="Room Number"
-            name="room"
-            value={formData.room}
-            onChange={handleChange}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            type="date"
-            label="Start Date"
-            name="startDate"
-            value={formData.startDate}
-            onChange={handleChange}
-            margin="normal"
-            required
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            fullWidth
-            type="date"
-            label="End Date"
-            name="endDate"
-            value={formData.endDate}
-            onChange={handleChange}
-            margin="normal"
-            InputLabelProps={{ shrink: true }}
-          />
-          <Button 
-            variant="contained" 
-            color="primary" 
-            type="submit"
-            sx={{ mt: 2 }}
+        {/* HEADER */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h3 className="fw-bold">
+            <FaBed /> Room Allocation
+          </h3>
+
+          <Button
+            variant="dark"
+            onClick={() => navigate("/warden/dashboard")}
           >
-            Allocate Room
+            <FaArrowLeft /> Back
           </Button>
-        </form>
-      </Paper>
+        </div>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Student ID</TableCell>
-              <TableCell>Room Number</TableCell>
-              <TableCell>Start Date</TableCell>
-              <TableCell>End Date</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {allocations.map((allocation) => (
-              <TableRow key={allocation._id}>
-                <TableCell>{allocation.student}</TableCell>
-                <TableCell>{allocation.room}</TableCell>
-                <TableCell>{new Date(allocation.startDate).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  {allocation.endDate ? new Date(allocation.endDate).toLocaleDateString() : '-'}
-                </TableCell>
-                <TableCell>{allocation.status}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Container>
+        {/* FORM CARD */}
+        <Card className="p-4 mb-4 shadow">
+          <h5 className="mb-3">
+            <FaPlus /> New Allocation
+          </h5>
+
+          <Form onSubmit={handleSubmit}>
+            <Row>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Student Roll No</Form.Label>
+                  <Form.Control
+                    name="student"
+                    value={formData.student}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Room No</Form.Label>
+                  <Form.Control
+                    name="room"
+                    value={formData.room}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Button
+              className="mt-3 w-100"
+              type="submit"
+            >
+              Allocate Room
+            </Button>
+          </Form>
+        </Card>
+
+        {/* TABLE */}
+        <Card className="shadow">
+          <Card.Header>
+            <FaHistory /> Allocation History
+          </Card.Header>
+
+          <Table striped hover responsive>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Room</th>
+                <th>Duration</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {allocations.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="text-center">
+                    No records
+                  </td>
+                </tr>
+              ) : (
+                allocations.map((a, i) => (
+                  <tr key={i}>
+                    <td>{a.student}</td>
+
+                    <td>
+                      <Badge bg="dark">
+                        {a.room}
+                      </Badge>
+                    </td>
+
+                    <td>
+                      {new Date(
+                        a.startDate
+                      ).toLocaleDateString()}{" "}
+                      -
+                      {new Date(
+                        a.endDate
+                      ).toLocaleDateString()}
+                    </td>
+
+                    <td>
+                      <Badge bg="success">
+                        Active
+                      </Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        </Card>
+      </Container>
+    </div>
   );
 };
 

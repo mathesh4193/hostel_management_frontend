@@ -28,6 +28,7 @@ import Students from "./components/Warden/Students.jsx";
 import LeaveRequests from "./components/Warden/LeaveRequests.jsx";
 import WardenComplaints from "./components/Warden/Complaints.jsx";
 import Outpass from "./components/Warden/Outpass.jsx";
+import WardenAttendance from "./components/Warden/Attendance.jsx";
 
 function App() {
   return (
@@ -108,6 +109,7 @@ function App() {
           <Route path="/warden/leave-requests" element={<LeaveRequests />} />
           <Route path="/warden/outpass" element={<Outpass />} />
           <Route path="/warden/complaints" element={<WardenComplaints />} />
+          <Route path="/warden/attendance" element={<WardenAttendance />} />
 
           {/* For safety add a fallback route */}
           <Route path="*" element={<h2 className='text-center mt-5'>404 - Page Not Found</h2>} />
